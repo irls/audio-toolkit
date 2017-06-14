@@ -2,14 +2,74 @@
 
 var fs = require('fs')
 const exec = require('child_process').exec
+const mv = requre('mv')
+const tempy = require('tempy')
+const fs = require('fs-extra')
+const globby = require('globby')
 
-module.exports.convertAllFiles = function(folderPath, inputExtension, outputExtension) {
-  return audioProcess(folderPath, 'convertAllFiles', inputExtension, outputExtension)
+class AudioToolkit {
+  constructor() {
+    // in case we need some instantiated object data
+  }
+
+  // resolves to an array of converted files
+  convertFormat = function(srcFiles, destFormat) {
+    // TODO, check that all extensions in srcFiles match
+    if (!destFormat) destFormat = 'flac' // default format
+    const tmpDir = tempy.directory()
+    // copy files to tmp directory, proess folder, return array of converted files
+    return copyFiles(srcFiles, tmpDir).then(
+      audioProcess(tmpDir, 'convertFormat', destFormat).then(
+        globby(tmpDir+'*.'+destFormat).then((paths) => paths);
+      )
+    )
+  }
+
+  // joins files, resolves to destFile
+  mergeFiles = function(srcFiles, destFile) {
+    if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
+    const tmpDir = tempy.directory()
+    return copyFiles(srcFiles, tmpDir).then(
+      audioProcess(tmpDir, 'mergeFiles', destFile)
+    )
+  }
+
+
+
+
+
 }
 
-module.exports.combineAllFiles = function(folderPath, extension) {
-  return audioProcess(folderPath, 'combineAllFiles', extension)
+module.exports = AudioToolkit
+
+
+/*
+   Internal utilities, not exported
+*/
+
+// resolves to a new temp directory unless tmpDir already exists
+getTmpDir(tmpDir) {
+  return new Promise(function(resolve, reject) {
+    try {
+      fs.access(tmpDir, () => resolve true);
+    } catch (e) {
+      resolve tempy.directory()
+    }
+  })
 }
+
+// copy array of files to folder returns a promise
+copyFiles(srcFiles, destDir) {
+  return Promise.All( srcFiles.map((src) => fs.copy(src, destDir)) )
+}
+
+
+
+
+
+/*
+
+
 
 module.exports.insertAudio = function(inputFile, segmentFile, atPos, outputFile) {
   let inputFileName = inputFile.split('/').pop();
@@ -19,9 +79,9 @@ module.exports.insertAudio = function(inputFile, segmentFile, atPos, outputFile)
     audioProcess(folderPath, 'insertAudio', inputFileName, segmentFileName, atPos)
     .then((output) => {
       // Copy the temporary output file to outputFile location
-      
+
       // Remove the temporary folder
-      
+
     })
   })
   .catch((err) => {
@@ -36,9 +96,9 @@ module.exports.deleteAudio = function(inputFile, fromPos, toPos, outputFile) {
     audioProcess(folderPath, 'deleteAudio', inputFileName, fromPos, toPos)
     .then((output) => {
       // Copy the temporary output file to outputFile location
-      
+
       // Remove the temporary folder
-      
+
     })
     .catch((err) => {
       reject(err);
@@ -57,9 +117,9 @@ module.exports.replaceAudio = function(inputFile, segmentFile, fromPos, toPos, o
     audioProcess(folderPath, 'replaceAudio', inputFileName, segmentFileName, fromPos, toPos)
     .then((output) => {
       // Copy the temporary output file to outputFile location
-      
+
       // Remove the temporary folder
-      
+
     })
     .catch((err) => {
       reject(err);
@@ -68,7 +128,7 @@ module.exports.replaceAudio = function(inputFile, segmentFile, fromPos, toPos, o
 }
 
 module.exports.extractFile = function(inputFile, fromPos, toPos, outputFile) {
-  
+
 }
 
 module.exports.splitFile = function(inputFile, atPos, outputFile1, outputFile2) {
@@ -78,9 +138,9 @@ module.exports.splitFile = function(inputFile, atPos, outputFile1, outputFile2) 
     audioProcess(folderPath, 'splitFile', inputFileName, atPos)
     .then((output) => {
       // Copy the temporary output files to outputFile1 and outputFile2
-      
+
       // Remove the temporary folder
-      
+
     })
     .catch((err) => {
       reject(err);
@@ -91,8 +151,8 @@ module.exports.splitFile = function(inputFile, atPos, outputFile1, outputFile2) 
 module.exports.joinFiles = function(outputFile, ...inputFiles) {
   let extension = inputFiles[0].split('.').pop();
   // Throw an error if the inputFiles are not all the same extension
-  
-  
+
+
   createTempFolder(inputFiles...)
   .then((folderPath) => {
     return audioProcess(folderPath, 'combineAllFiles', extension)
@@ -146,13 +206,14 @@ function audioProcess(folderPath, taskName, ...args){
 function createTempFolder(...files) {
   return new Promise(function(resolve, reject){
     // create a new temporary folder
-    
+
     // copy all ...files into temporary folder
-    
+
     // ensure that the files were properly copied to the folder
-    
+
     // resolve with name of the temporary folder
-    
+
   })
 }
 
+*/
