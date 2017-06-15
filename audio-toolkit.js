@@ -23,7 +23,7 @@ class AudioToolkit {
     // copy files to tmp directory, process entire folder, resolve array of converted files
     return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
     //return copyFilesArray(srcFiles, tmpSrcDir).then(
-      audioProcess(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir).then(
+      processAudio(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir).then(
         globby(tmpDestDir+'*.'+destFormat).then((paths) => paths);
       )
     )
@@ -39,7 +39,7 @@ class AudioToolkit {
     const tmpDestFile = tmpDestDir + 'destAudio.' + path.extname(srcFile)
     return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
       //    return copyFilesArray(srcFiles, tmpSrcDir).then(
-      audioProcess(tmpSrcDir, 'mergeFiles', tmpDestDir, fileName(tmpDestFile)).then(
+      processAudio(tmpSrcDir, 'mergeFiles', tmpDestDir, fileName(tmpDestFile)).then(
         fs.copy(tmpDestFile, destFile).then(
           () => destFile
         )
@@ -57,7 +57,7 @@ class AudioToolkit {
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
-      audioProcess(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), position).done(
+      processAudio(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), position).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
@@ -73,7 +73,7 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
-      audioProcess(tmpDir, 'deleteSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
+      processAudio(tmpDir, 'deleteSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
@@ -90,7 +90,7 @@ class AudioToolkit {
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
-      audioProcess(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
+      processAudio(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
@@ -108,7 +108,7 @@ class AudioToolkit {
     const tmpDest1 = tmpDir + 'destAudio1.'+ path.extname(srcFile)
     const tmpDest2 = tmpDir + 'destAudio2.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
-      audioProcess(tmpDir, 'splitFile', fileName(tmpSrc), fileName(tmpDest1),  fileName(tmpDest1), position).done(
+      processAudio(tmpDir, 'splitFile', fileName(tmpSrc), fileName(tmpDest1),  fileName(tmpDest1), position).done(
         // copy output file to destFile and resolve to array of 2 destFiles
         fs.copy(tmpDest1, destPart1).then(fs.copy(tmpDest2, destPart2).done(
           () => [destPart1, destPart2]
@@ -124,7 +124,7 @@ class AudioToolkit {
     const tmpDir = tempy.directory()
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
-      audioProcess(tmpDir, 'getMetaData', fileName(tmpSrc)).done(
+      processAudio(tmpDir, 'getMetaData', fileName(tmpSrc)).done(
         (metaData) => metaData
       )
     )
@@ -140,7 +140,7 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(fs.copy(destfile, tmpDest).then(
-      audioProcess(tmpDir, 'normalizeLevels', fileName(tmpSrc), fileName(tmpDest)).done(
+      processAudio(tmpDir, 'normalizeLevels', fileName(tmpSrc), fileName(tmpDest)).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
@@ -155,7 +155,7 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
-      audioProcess(tmpDir, 'normalizeSilence', fileName(tmpSrc), fileName(tmpDest)).done(
+      processAudio(tmpDir, 'normalizeSilence', fileName(tmpSrc), fileName(tmpDest)).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
@@ -170,13 +170,8 @@ module.exports = AudioToolkit
 
 
 /*
-   Internal utilities, not exported
+   Internal, not exported
 */
-
-// copy array of files to folder returns a promise
-// copyFilesArray(srcFiles, destDir) {
-//   return Promise.All( srcFiles.map((src) => fs.copy(src, destDir)) )
-// }
 
 function changeExt(fp, ext) {
   let parts = fp.split('.')
@@ -189,21 +184,28 @@ function fileName(fp, ext) {
   return fn
 }
 
+function processAudio(folderPath, taskName, ...args){
+  return new Promise(function(resolve, reject) {
+    prepEnvironment().then( () => {
+      let args = join(' ', args)
+      let cmd = `'docker' run --rm -d -v ${folderPath}:/data /app/${taskName}.sh ${args}`
+      console.log('Exec: '+ cmd)
+      let docker = exec(cmd)
+      docker.stdout.on('close', code =>  resolve($(code)) )
+      docker.stdout.on('exit', code =>  resolve($(exit)) )
+      docker.stdout.on('error', err => reject(err) )
+    }
+  }
+}
 
-// resolves to a new temp directory unless tmpDir already exists
-//   we might not use this since creating a tmp folder is so fast
-// getTmpDir(tmpDir) {
-//   return new Promise(function(resolve, reject) {
-//     try {
-//       fs.access(tmpDir, () => resolve true);
-//     } catch (e) {
-//       resolve tempy.directory()
-//     }
-//   })
-// }
-
-
-
+prepEnvironment = function() {
+  return new Promise(function(resolve, reject) {
+    let docker = exec('"eval $(docker-machine env default)"')
+    docker.stdout.on('close', code => resolve($(code)) )
+    docker.stdout.on('exit', code =>  resolve($(exit)) )
+    docker.stdout.on('error', err => reject(err) )
+  }
+}
 
 
 
@@ -219,7 +221,7 @@ module.exports.deleteAudio = function(inputFile, fromPos, toPos, outputFile) {
   let inputFileName = inputFile.split('/').pop();
   createTempFolder(inputFile)
   .then((folderPath) => {
-    audioProcess(folderPath, 'deleteAudio', inputFileName, fromPos, toPos)
+    processAudio(folderPath, 'deleteAudio', inputFileName, fromPos, toPos)
     .then((output) => {
       // Copy the temporary output file to outputFile location
 
@@ -240,7 +242,7 @@ module.exports.replaceAudio = function(inputFile, segmentFile, fromPos, toPos, o
   let segmentFileName = segmentFile.split('/').pop();
   createTempFolder(inputFile, segmentFile)
   .then((folderPath) => {
-    audioProcess(folderPath, 'replaceAudio', inputFileName, segmentFileName, fromPos, toPos)
+    processAudio(folderPath, 'replaceAudio', inputFileName, segmentFileName, fromPos, toPos)
     .then((output) => {
       // Copy the temporary output file to outputFile location
 
@@ -261,7 +263,7 @@ module.exports.splitFile = function(inputFile, atPos, outputFile1, outputFile2) 
   let inputFileName = inputFile.split('/').pop();
   createTempFolder(inputFile)
   .then((folderPath) => {
-    audioProcess(folderPath, 'splitFile', inputFileName, atPos)
+    processAudio(folderPath, 'splitFile', inputFileName, atPos)
     .then((output) => {
       // Copy the temporary output files to outputFile1 and outputFile2
 
@@ -281,7 +283,7 @@ module.exports.joinFiles = function(outputFile, ...inputFiles) {
 
   createTempFolder(inputFiles...)
   .then((folderPath) => {
-    return audioProcess(folderPath, 'combineAllFiles', extension)
+    return processAudio(folderPath, 'combineAllFiles', extension)
   })
   .catch((err) => {
     reject(err);
@@ -303,7 +305,7 @@ prepEnvironment = function(){
   }
 }
 
-function audioProcess(folderPath, taskName, ...args){
+function processAudio(folderPath, taskName, ...args){
   return new Promise(function(resolve, reject) {
     fs.ensureDir(folderPath, function(err){
       if(err) reject(err)

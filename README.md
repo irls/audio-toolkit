@@ -1,4 +1,4 @@
-# audio-toolkit
+# Audio-toolkit
 
 A set of tools for processing audio files intended for use in audiobooks. Mainly this means a set of wrapper functions around FFMpeg --using an ephemeral docker container.
 
