@@ -1,11 +1,13 @@
 'use strict'
 
-var fs = require('fs')
-const exec = require('child_process').exec
-const mv = requre('mv') // not using yet
-const tempy = require('tempy')
-const fs = require('fs-extra')
+const exec =   require('child_process').exec
+const mv =     require('mv') // not using yet
+const tempy =  require('tempy')
+const fs =     require('fs-extra')
 const globby = require('globby')
+const path   = require('path')
+
+
 
 class AudioToolkit {
   constructor() {
@@ -13,46 +15,54 @@ class AudioToolkit {
   }
 
   // resolves to an array of converted files
-  convertFormat = function(srcFiles, destFormat) {
-    if (!srcFile||!destFormat)
+  convertFormat(srcFiles, destFormat) {
+    if (!srcFiles||!destFormat)
      throw "ConvertFormat warning: srcFile & destFormat are required fields"
     // TODO, check that all extensions in srcFiles match
     if (!destFormat) destFormat = 'flac' // default format
-    const tmpSrcDir = tempy.directory()
-    const tmpDestDir = tempy.directory()
+    const tmpSrcDir = tempy.directory()  + '/'
+    const tmpDestDir = tempy.directory()  + '/'
+
+    //console.log(tmpSrcDir, tmpDestDir)
+    //console.log('srcFiles:', srcFiles.join("\n"))
+
     // copy files to tmp directory, process entire folder, resolve array of converted files
-    return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
-    //return copyFilesArray(srcFiles, tmpSrcDir).then(
-      processAudio(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir).then(
-        globby(tmpDestDir+'*.'+destFormat).then((paths) => paths);
-      )
+    return Promise.all(
+      srcFiles.map(src => fs.copy(src, tmpSrcDir + fileName(src)) )
+    ).then(
+      processAudio(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir)
+    ).then(
+      globby(tmpDestDir+'*.'+destFormat).then(paths => {
+         console.log('globby results in: '+tmpDestDir+'*.'+destFormat, paths)
+         return paths
+      })
     )
   }
 
   // joins files, resolves to destFile
-  mergeFiles = function(srcFiles, destFile) {
+  mergeFiles(srcFiles, destFile) {
     if (!srcFile||!destFile)
      throw "MergeFiles warning: srcFile & destFile are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)) // if no dest specified
-    const tmpSrcDir = tempy.directory()
-    const tmpDestDir = tempy.directory()
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    const tmpSrcDir = tempy.directory()  + '/'
+    const tmpDestDir = tempy.directory()  + '/'
     const tmpDestFile = tmpDestDir + 'destAudio.' + path.extname(srcFile)
     return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
       //    return copyFilesArray(srcFiles, tmpSrcDir).then(
       processAudio(tmpSrcDir, 'mergeFiles', tmpDestDir, fileName(tmpDestFile)).then(
         fs.copy(tmpDestFile, destFile).then(
-          () => destFile
+          () => { return destFile }
         )
       )
     )
   }
 
   // insert one file into another, resolves to destFile
-  insertFragment = function(srcFile, fragmentFile, position, destFile) {
+  insertFragment(srcFile, fragmentFile, position, destFile) {
     if (!srcFile||!fragmentFile||!position)
      throw "InsertFragment warning: srcFile, fragmentFile and position are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
-    const tmpDir = tempy.directory()
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
@@ -65,11 +75,11 @@ class AudioToolkit {
   }
 
   // deletes section, resolves to destFile
-  deleteSection = function(srcFile, fromPos, toPos, destFile) {
+  deleteSection(srcFile, fromPos, toPos, destFile) {
     if (!srcFile||!fromPos||!toPos)
      throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
-    const tmpDir = tempy.directory()
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
@@ -81,11 +91,11 @@ class AudioToolkit {
   }
 
   // deletes section, resolves to destFile
-  replaceSection = function(srcFile, fragmentFile, fromPos, toPos, destFile) {
+  replaceSection(srcFile, fragmentFile, fromPos, toPos, destFile) {
     if (!srcFile||!fragmentFile||!fromPos||!toPos)
      throw "ReplaceSection warning: srcFile, fragmentFile, fromPos and toPos are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
-    const tmpDir = tempy.directory()
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
@@ -98,12 +108,12 @@ class AudioToolkit {
   }
 
   // splits audio and resolves to array of two dest files
-  splitFile = function(srcFile, position, destPart1, destPart2) {
+  splitFile(srcFile, position, destPart1, destPart2) {
     if (!srcFile||!position||!toPos)
      throw "SplitFile warning: srcFile & position are required fields"
-    if (!destPart1) destPart1 = tempy.file({extension: path.extname(srcFile))
-    if (!destPart2) destPart2 = tempy.file({extension: path.extname(srcFile))
-    const tmpDir = tempy.directory()
+    if (!destPart1) destPart1 = tempy.file({extension: path.extname(srcFile)})
+    if (!destPart2) destPart2 = tempy.file({extension: path.extname(srcFile)})
+    const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest1 = tmpDir + 'destAudio1.'+ path.extname(srcFile)
     const tmpDest2 = tmpDir + 'destAudio2.'+ path.extname(srcFile)
@@ -118,10 +128,10 @@ class AudioToolkit {
   }
 
   // returns obj with file size, audio length, format, bitrate etc.
-  getMetaData = function(srcFile) {
+  getMetaData(srcFile) {
     if (!srcFile)
      throw "GetMetaData warning: srcFile is a required field"
-    const tmpDir = tempy.directory()
+    const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
       processAudio(tmpDir, 'getMetaData', fileName(tmpSrc)).done(
@@ -131,12 +141,12 @@ class AudioToolkit {
   }
 
   // normalize volume levels
-  normalizeLevels = function(srcFile, destfile, options) {
+  normalizeLevels(srcFile, destfile, options) {
     // TODO: implement some options
     if (!srcFile)
      throw "NormalizeLevels warning: srcFile is a required field"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
-    const tmpDir = tempy.directory()
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(fs.copy(destfile, tmpDest).then(
@@ -148,10 +158,10 @@ class AudioToolkit {
   }
 
   // reduced excess silence between words and at either end of audio file
-  normalizeSilence = function(srcFile, destfile) {
+  normalizeSilence(srcFile, destfile) {
     if (!srcFile) throw "NormalizeSilence warning: srcFile is a required field"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
-    const tmpDir = tempy.directory()
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
@@ -186,6 +196,7 @@ function fileName(fp, ext) {
 
 function processAudio(folderPath, taskName, ...args){
   return new Promise(function(resolve, reject) {
+    //return resolve(true);
     prepEnvironment().then( () => {
       let args = join(' ', args)
       let cmd = `'docker' run --rm -d -v ${folderPath}:/data /app/${taskName}.sh ${args}`
@@ -194,17 +205,17 @@ function processAudio(folderPath, taskName, ...args){
       docker.stdout.on('close', code =>  resolve($(code)) )
       docker.stdout.on('exit', code =>  resolve($(exit)) )
       docker.stdout.on('error', err => reject(err) )
-    }
-  }
+    })
+  })
 }
 
-prepEnvironment = function() {
+function prepEnvironment() {
   return new Promise(function(resolve, reject) {
     let docker = exec('"eval $(docker-machine env default)"')
     docker.stdout.on('close', code => resolve($(code)) )
     docker.stdout.on('exit', code =>  resolve($(exit)) )
     docker.stdout.on('error', err => reject(err) )
-  }
+  })
 }
 
 
