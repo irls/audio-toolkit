@@ -14,12 +14,15 @@ class AudioToolkit {
 
   // resolves to an array of converted files
   convertFormat = function(srcFiles, destFormat) {
+    if (!srcFile||!destFormat)
+     throw "ConvertFormat warning: srcFile & destFormat are required fields"
     // TODO, check that all extensions in srcFiles match
     if (!destFormat) destFormat = 'flac' // default format
     const tmpSrcDir = tempy.directory()
     const tmpDestDir = tempy.directory()
     // copy files to tmp directory, process entire folder, resolve array of converted files
-    return copyFiles(srcFiles, tmpSrcDir).then(
+    return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
+    //return copyFilesArray(srcFiles, tmpSrcDir).then(
       audioProcess(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir).then(
         globby(tmpDestDir+'*.'+destFormat).then((paths) => paths);
       )
@@ -28,13 +31,16 @@ class AudioToolkit {
 
   // joins files, resolves to destFile
   mergeFiles = function(srcFiles, destFile) {
-    if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
+    if (!srcFile||!destFile)
+     throw "MergeFiles warning: srcFile & destFile are required fields"
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)) // if no dest specified
     const tmpSrcDir = tempy.directory()
     const tmpDestDir = tempy.directory()
-    const tmpDestFileName =  path.basename(destFile)
-    return copyFiles(srcFiles, tmpSrcDir).then(
-      audioProcess(tmpSrcDir, 'mergeFiles', tmpDestDir, tmpDestFileName).then(
-        fs.copy(tmpDestDir+tmpDestFileName, destFile).then(
+    const tmpDestFile = tmpDestDir + 'destAudio.' + path.extname(srcFile)
+    return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
+//    return copyFilesArray(srcFiles, tmpSrcDir).then(
+      audioProcess(tmpSrcDir, 'mergeFiles', tmpDestDir, fileName(tmpDestFile)).then(
+        fs.copy(tmpDestFile, destFile).then(
           () => destFile
         )
       )
@@ -45,26 +51,24 @@ class AudioToolkit {
   insertFragment = function(srcFile, fragmentFile, position, destFile) {
     if (!srcFile||!fragmentFile||!position)
      throw "InsertFragment warning: srcFile, fragmentFile and position are required fields"
-    if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
     const tmpDir = tempy.directory()
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(
-      fs.copy(fragementFile, tmpFrag).then(
-        audioProcess(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), position).done(
-          // copy output file to destFile and resolve to destFile
-          fs.copy(tmpDest, destFile).then( () => destFile )
-        )
+    return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
+      audioProcess(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), position).done(
+        // copy output file to destFile and resolve to destFile
+        fs.copy(tmpDest, destFile).then( () => destFile )
       )
-    )
+    ))
   }
 
   // deletes section, resolves to destFile
   deleteSection = function(srcFile, fromPos, toPos, destFile) {
     if (!srcFile||!fromPos||!toPos)
      throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
-    if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
     const tmpDir = tempy.directory()
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
@@ -80,27 +84,25 @@ class AudioToolkit {
   replaceSection = function(srcFile, fragmentFile, fromPos, toPos, destFile) {
     if (!srcFile||!fragmentFile||!fromPos||!toPos)
      throw "ReplaceSection warning: srcFile, fragmentFile, fromPos and toPos are required fields"
-    if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
     const tmpDir = tempy.directory()
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(
-      fs.copy(fragementFile, tmpFrag).then(
-        audioProcess(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
-          // copy output file to destFile and resolve to destFile
-          fs.copy(tmpDest, destFile).then( () => destFile )
-        )
+    return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
+      audioProcess(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
+        // copy output file to destFile and resolve to destFile
+        fs.copy(tmpDest, destFile).then( () => destFile )
       )
-    )
+    ))
   }
 
   // splits audio and resolves to array of two dest files
   splitFile = function(srcFile, position, destPart1, destPart2) {
     if (!srcFile||!position||!toPos)
      throw "SplitFile warning: srcFile & position are required fields"
-    if (!destPart1) destPart1 = tempy.file() // if no dest specified, use tmp
-    if (!destPart2) destPart2 = tempy.file()
+    if (!destPart1) destPart1 = tempy.file({extension: path.extname(srcFile))
+    if (!destPart2) destPart2 = tempy.file({extension: path.extname(srcFile))
     const tmpDir = tempy.directory()
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest1 = tmpDir + 'destAudio1.'+ path.extname(srcFile)
@@ -110,7 +112,7 @@ class AudioToolkit {
         // copy output file to destFile and resolve to array of 2 destFiles
         fs.copy(tmpDest1, destPart1).then(fs.copy(tmpDest2, destPart2).done(
           () => [destPart1, destPart2]
-        )
+        ))
       )
     )
   }
@@ -128,9 +130,37 @@ class AudioToolkit {
     )
   }
 
+  // normalize volume levels
+  normalizeLevels = function(srcFile, destfile, options) {
+    // TODO: implement some options
+    if (!srcFile)
+     throw "NormalizeLevels warning: srcFile is a required field"
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
+    const tmpDir = tempy.directory()
+    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
+    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpSrc).then(fs.copy(destfile, tmpDest).then(
+      audioProcess(tmpDir, 'normalizeLevels', fileName(tmpSrc), fileName(tmpDest)).done(
+        // copy output file to destFile and resolve to destFile
+        fs.copy(tmpDest, destFile).then( () => destFile )
+      )
+    ))
+  }
 
-  // - normalizeLevels(srcFile, [destFile], [options]) // adjust volume levels
-  // - normalizeWhiteSpace(srcFile, [destFile], [options]) // time between words and start/stop
+  // reduced excess silence between words and at either end of audio file
+  normalizeSilence = function(srcFile, destfile) {
+    if (!srcFile) throw "NormalizeSilence warning: srcFile is a required field"
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile))
+    const tmpDir = tempy.directory()
+    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
+    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpSrc).then(
+      audioProcess(tmpDir, 'normalizeSilence', fileName(tmpSrc), fileName(tmpDest)).done(
+        // copy output file to destFile and resolve to destFile
+        fs.copy(tmpDest, destFile).then( () => destFile )
+      )
+    )
+  }
 
 
 
@@ -143,7 +173,10 @@ module.exports = AudioToolkit
    Internal utilities, not exported
 */
 
-function
+// copy array of files to folder returns a promise
+// copyFilesArray(srcFiles, destDir) {
+//   return Promise.All( srcFiles.map((src) => fs.copy(src, destDir)) )
+// }
 
 function changeExt(fp, ext) {
   let parts = fp.split('.')
@@ -156,25 +189,20 @@ function fileName(fp, ext) {
   return fn
 }
 
-function fileExt(fp) {
-  return path.extname(fp)
-}
 
 // resolves to a new temp directory unless tmpDir already exists
-getTmpDir(tmpDir) {
-  return new Promise(function(resolve, reject) {
-    try {
-      fs.access(tmpDir, () => resolve true);
-    } catch (e) {
-      resolve tempy.directory()
-    }
-  })
-}
+//   we might not use this since creating a tmp folder is so fast
+// getTmpDir(tmpDir) {
+//   return new Promise(function(resolve, reject) {
+//     try {
+//       fs.access(tmpDir, () => resolve true);
+//     } catch (e) {
+//       resolve tempy.directory()
+//     }
+//   })
+// }
 
-// copy array of files to folder returns a promise
-copyFiles(srcFiles, destDir) {
-  return Promise.All( srcFiles.map((src) => fs.copy(src, destDir)) )
-}
+
 
 
 
