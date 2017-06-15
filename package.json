@@ -1,21 +1,41 @@
 {
-	"name": "docker-ffmpeg",
-	"version": "1.0.0",
-  "main": "index.js",	
+  "name": "audio-toolkit",
+  "version": "1.0.2",
+  "main": "audio-toolkit.js",
   "repository": {
-  	"type": "git",
-  	"url": "https://github.com/djones1844/docker-ffmpeg.git"
+    "type": "git",
+    "url": "git+https://github.com/djones1844/audio-toolkit.git"
   },
   "scripts": {
     "test": "mocha"
   },
-	"dependencies": {
-		"mv": "2.1.1"
-	},
+  "dependencies": {
+    "fs-extra": "^3.0.1",
+    "globby": "^6.1.0",
+    "mv": "^2.1.1",
+    "path": "^0.12.7",
+    "tempy": "^0.1.0"
+  },
   "devDependencies": {
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
     "chai-fs": "^1.0.0",
+    "md5-file": "^3.1.1",
     "mocha": "^3.2.0"
-  }
+  },
+  "description": "A set of tools for processing audio files intended for use in audiobooks. Mainly this means a set of wrapper functions around FFMpeg --using an ephemeral docker container.",
+  "bugs": {
+    "url": "https://github.com/djones1844/audio-toolkit/issues"
+  },
+  "homepage": "https://github.com/djones1844/audio-toolkit#readme",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [
+    "audio",
+    "ffmpeg",
+    "audiobook"
+  ],
+  "author": "Chad Jones <djones1844@gmail.com>)",
+  "license": "ISC"
 }

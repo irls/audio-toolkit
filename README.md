@@ -1,52 +1,59 @@
-# docker-ffmpeg
+# Audio-toolkit
 
-A dockerized ffmpeg built for processing audio for the ilm-server project.
+A set of tools for processing audio files intended for use in audiobooks. Mainly this means a set of wrapper functions around FFMpeg --using an ephemeral docker container.
 
 ## Usage
 
-In your code, call ffmpeg(folderPath, taskName, ...(args))
+``` npm install --save audio-toolkit ```
 
-This will:
-* build the image if it does not yet exist on the server
-* start a new docker instance
-* mount folderPath as /audio in the docker image
-* run /app/[taskName].sh (args)...
+```javascript
+import AudioToolkit from "audio-toolkit"
 
-## Tasks
+// get an instance of our toolkit interface
+const aud = new AudioToolkit()
 
-Each task is written as a separate bash script which is run inside the docker 
-container. The bash scripts must be named as [taskName].sh, where [taskName] is 
-the expected parameter to be used when calling ffmpeg within node.
+// For example, let's convert a bunch of files to FLAC and join
+function importAudioBookFiles(srcFiles, targetFile) {
+  return aud.convertFormat(srcFiles, 'flac').then(function(destFiles) {
+    return aud.mergeFiles(destFiles, targetFile)
+  }
+}
+```
 
-Between import and export, all audio files should be in .flac format.
+## Tools
 
-AF: Audio File for an entire audiobook
-BLAF: Block Level Audio File for a single section
+Each tool calls a separate bash script run inside the docker
+container. If the docker container does not exist, it will be build from
+a docker compose file the first time. This may introduce a slight delay
+but only once each time the server is restarted.
 
-- import: converts disparate audio files to .flac and joins into AF
-- combineAll: joins BLAFs into AF, e.g. to prepare for mastering
-- insert: inserts an audio selection into a BLAF
-- delete: deletes an audio selection from a BLAF
-- replace: replaces an audio selection from a BLAF
-- splitBlock: splits a BLAF into two
-- joinBlocks: joins two BLAFs into one
-- export: convert to .ogg or .mp3 (TODO: choose) for publishing
+```javascript
 
-## Extending
+// resolves to an array of converted files
+convertFormat(srcFiles, destFormat)
 
-New capabilities of ffmpeg docker container should be added as bash scripts in 
-the scripts folder. It is the responsibility of the node.js calling code to know 
-what parameters are needed by each script.
+// joins files, resolves to destFile
+mergeFiles(srcFiles, destFile)
 
-## Security
+// insert one file into another, resolves to destFile
+insertFragment(srcFile, fragmentFile, position, [destFile])
 
-It is the responsibility of the node.js calling code to ensure that the folder 
-passed to ffmpeg is one that contains only audio to be processed. **Security 
-vulnerabilities could be introduced if system folders are mounted inside the 
-ffmpeg docker container.**
+// deletes section, resolves to destFile
+deleteSection(srcFile, fromPos, toPos, [destFile])
 
-It is the responsibility of bash scripts not to introduce security 
-vulnerabilities through incorrect handling of malicious parameters. This 
-responsibility should be largely mitigated by the containerized nature of the 
-service, in that data outside the mounted folder should be inaccessible from 
-within the ffmpeg docker container.
+// deletes section, resolves to destFile
+replaceSection(srcFile, fragmentFile, fromPos, toPos, [destFile])
+
+// splits audio and resolves to array of two dest files
+splitFile(srcFile, position, [destPart1], [destPart2])
+
+// returns obj with file size, audio length, format, bitrate etc.
+getMetaData(srcFile)
+
+// normalize volume levels
+normalizeLevels(srcFile, [destfile], [options])
+
+// reduced excess silence between words and at either end of audio file
+normalizeSilence = function(srcFile, [destfile])
+
+```
