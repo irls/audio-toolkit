@@ -15,7 +15,7 @@ const aud = new AudioToolkit()
 // For example, let's convert a bunch of files to FLAC and join
 function importAudioBookFiles(srcFiles, targetFile) {
   return aud.convertFormat(srcFiles, 'flac').then(function(destFiles) {
-    return aud.joinFiles(destFiles, targetFile)
+    return aud.mergeFiles(destFiles, targetFile)
   }
 }
 ```
@@ -28,13 +28,32 @@ a docker compose file the first time. This may introduce a slight delay
 but only once each time the server is restarted.
 
 ```javascript
-- convertFormat(srcFiles, [format='flac']) // resolves to an array of converted files
-- mergeFiles(srcFiles, [destFile]) // joins files, resolves to destFile
-- insertFragment(srcFile, fragmentFile, pos, [destFile]) // resolves to destFile
-- deleteSection(srcFile, pos, len, [destFile]) // deletes section, resolves to destFile
-- replaceSection(srcFile, fragmentFile, pos, len) // replaces section, resolves to destFile
-- splitFile(srcFile, pos, [destFiles]) // splits audio at pos
-- audioMetaData(srcFile) // returns file size, audio length, format, bitrate etc.
-- normalizeLevels(srcFile, [destFile], [options]) // adjust volume levels
-- normalizeWhiteSpace(srcFile, [destFile], [options]) // time between words and start/stop
+
+// resolves to an array of converted files
+convertFormat(srcFiles, destFormat)
+
+// joins files, resolves to destFile
+mergeFiles(srcFiles, destFile)
+
+// insert one file into another, resolves to destFile
+insertFragment(srcFile, fragmentFile, position, [destFile])
+
+// deletes section, resolves to destFile
+deleteSection(srcFile, fromPos, toPos, [destFile])
+
+// deletes section, resolves to destFile
+replaceSection(srcFile, fragmentFile, fromPos, toPos, [destFile])
+
+// splits audio and resolves to array of two dest files
+splitFile(srcFile, position, [destPart1], [destPart2])
+
+// returns obj with file size, audio length, format, bitrate etc.
+getMetaData(srcFile)
+
+// normalize volume levels
+normalizeLevels(srcFile, [destfile], [options])
+
+// reduced excess silence between words and at either end of audio file
+normalizeSilence = function(srcFile, [destfile])
+
 ```

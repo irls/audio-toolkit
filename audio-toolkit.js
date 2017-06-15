@@ -38,7 +38,7 @@ class AudioToolkit {
     const tmpDestDir = tempy.directory()
     const tmpDestFile = tmpDestDir + 'destAudio.' + path.extname(srcFile)
     return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
-//    return copyFilesArray(srcFiles, tmpSrcDir).then(
+      //    return copyFilesArray(srcFiles, tmpSrcDir).then(
       audioProcess(tmpSrcDir, 'mergeFiles', tmpDestDir, fileName(tmpDestFile)).then(
         fs.copy(tmpDestFile, destFile).then(
           () => destFile
