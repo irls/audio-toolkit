@@ -52,53 +52,51 @@ class AudioToolkit {
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
       fs.copy(fragementFile, tmpFrag).then(
-        audioProcess(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), position, fileName(tmpDest)).done(
-          fs.copy(tmpDest, destFile).then(
-            () => destFile
-          )
+        audioProcess(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), position).done(
+          // copy output file to destFile and resolve to destFile
+          fs.copy(tmpDest, destFile).then( () => destFile )
         )
       )
     )
-
-
-    copyFiles([srcFile], tmpDir).then(
-      audioProcess(tmpDir, 'insertFragment', fragmentFile, pos, destFile)
-    )
-  }
-
-  module.exports.deleteAudio = function(inputFile, fromPos, toPos, outputFile) {
-    let inputFileName = inputFile.split('/').pop();
-    createTempFolder(inputFile)
-    .then((folderPath) => {
-      audioProcess(folderPath, 'deleteAudio', inputFileName, fromPos, toPos)
-      .then((output) => {
-        // Copy the temporary output file to outputFile location
-
-        // Remove the temporary folder
-
-      })
-      .catch((err) => {
-        reject(err);
-      })
-    })
-    .catch((err) => {
-      reject(err)
-    })
   }
 
   // deletes section, resolves to destFile
-  deleteSection(srcFile, pos, len, [destFile]) {
+  deleteSection = function(srcFile, fromPos, toPos, destFile) {
+    if (!srcFile||!fromPos||!toPos)
+     throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
     if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
-    return copyFiles([srcFile], tmpDir).then(
-      audioProcess(tmpDir, 'insertFragment', fragmentFile, pos, destFile)
+    const tmpDir = tempy.directory()
+    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
+    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpSrc).then(
+      audioProcess(tmpDir, 'deleteSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
+        // copy output file to destFile and resolve to destFile
+        fs.copy(tmpDest, destFile).then( () => destFile )
+      )
     )
+  }
 
-
-    audioProcess(folderPath, 'deleteAudio', inputFileName, fromPos, toPos)
+  // deletes section, resolves to destFile
+  replaceSection = function(srcFile, fragmentFile, fromPos, toPos, destFile) {
+    if (!srcFile||!fragmentFile||!fromPos||!toPos)
+     throw "ReplaceSection warning: srcFile, fragmentFile, fromPos and toPos are required fields"
+    if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
+    const tmpDir = tempy.directory()
+    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
+    const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
+    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpSrc).then(
+      fs.copy(fragementFile, tmpFrag).then(
+        audioProcess(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
+          // copy output file to destFile and resolve to destFile
+          fs.copy(tmpDest, destFile).then( () => destFile )
+        )
+      )
+    )
   }
 
 
-  // - replaceSection(srcFile, fragmentFile, pos, len) // replaces section, resolves to destFile
+
   // - splitFile(srcFile, pos, [destFiles]) // splits audio at pos
   // - audioMetaData(srcFile) // returns file size, audio length, format, bitrate etc.
   // - normalizeLevels(srcFile, [destFile], [options]) // adjust volume levels
