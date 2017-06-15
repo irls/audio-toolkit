@@ -19,6 +19,7 @@
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
     "chai-fs": "^1.0.0",
+    "md5-file": "^3.1.1",
     "mocha": "^3.2.0"
   },
   "description": "A set of tools for processing audio files intended for use in audiobooks. Mainly this means a set of wrapper functions around FFMpeg --using an ephemeral docker container.",
