@@ -95,9 +95,27 @@ class AudioToolkit {
     )
   }
 
+  // // splits audio and resolves to array of two dest files
+  splitFile = function(srcFile, position, destPart1, destPart2) {
+    if (!srcFile||||!position||!toPos)
+     throw "SplitFile warning: srcFile & position are required fields"
+    if (!destPart1) destPart1 = tempy.file() // if no dest specified, use tmp
+    if (!destPart2) destPart2 = tempy.file()
+    const tmpDir = tempy.directory()
+    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
+    const tmpDest1 = tmpDir + 'destAudio1.'+ path.extname(srcFile)
+    const tmpDest2 = tmpDir + 'destAudio2.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpSrc).then(
+      audioProcess(tmpDir, 'splitFile', fileName(tmpSrc), fileName(tmpDest1),  fileName(tmpDest1), position).done(
+        // copy output file to destFile and resolve to array of 2 destFiles
+        fs.copy(tmpDest1, destPart1).then(fs.copy(tmpDest2, destPart2).done(
+          () => [destPart1, destPart2]
+        )
+      )
+    )
+  }
 
 
-  // - splitFile(srcFile, pos, [destFiles]) // splits audio at pos
   // - audioMetaData(srcFile) // returns file size, audio length, format, bitrate etc.
   // - normalizeLevels(srcFile, [destFile], [options]) // adjust volume levels
   // - normalizeWhiteSpace(srcFile, [destFile], [options]) // time between words and start/stop
