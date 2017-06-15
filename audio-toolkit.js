@@ -2,7 +2,7 @@
 
 var fs = require('fs')
 const exec = require('child_process').exec
-const mv = requre('mv')
+const mv = requre('mv') // not using yet
 const tempy = require('tempy')
 const fs = require('fs-extra')
 const globby = require('globby')
@@ -16,11 +16,12 @@ class AudioToolkit {
   convertFormat = function(srcFiles, destFormat) {
     // TODO, check that all extensions in srcFiles match
     if (!destFormat) destFormat = 'flac' // default format
-    const tmpDir = tempy.directory()
-    // copy files to tmp directory, proess folder, return array of converted files
-    return copyFiles(srcFiles, tmpDir).then(
-      audioProcess(tmpDir, 'convertFormat', destFormat).then(
-        globby(tmpDir+'*.'+destFormat).then((paths) => paths);
+    const tmpSrcDir = tempy.directory()
+    const tmpDestDir = tempy.directory()
+    // copy files to tmp directory, process entire folder, resolve array of converted files
+    return copyFiles(srcFiles, tmpSrcDir).then(
+      audioProcess(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir).then(
+        globby(tmpDestDir+'*.'+destFormat).then((paths) => paths);
       )
     )
   }
@@ -28,13 +29,80 @@ class AudioToolkit {
   // joins files, resolves to destFile
   mergeFiles = function(srcFiles, destFile) {
     if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
-    const tmpDir = tempy.directory()
-    return copyFiles(srcFiles, tmpDir).then(
-      audioProcess(tmpDir, 'mergeFiles', destFile)
+    const tmpSrcDir = tempy.directory()
+    const tmpDestDir = tempy.directory()
+    const tmpDestFileName =  path.basename(destFile)
+    return copyFiles(srcFiles, tmpSrcDir).then(
+      audioProcess(tmpSrcDir, 'mergeFiles', tmpDestDir, tmpDestFileName).then(
+        fs.copy(tmpDestDir+tmpDestFileName, destFile).then(
+          () => destFile
+        )
+      )
     )
   }
 
+  // insert one file into another, resolves to destFile
+  insertFragment = function(srcFile, fragmentFile, position, destFile) {
+    if (!srcFile||!fragmentFile||!position)
+     throw "InsertFragment warning: srcFile, fragmentFile and position are required fields"
+    if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
+    const tmpDir = tempy.directory()
+    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
+    const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
+    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpSrc).then(
+      fs.copy(fragementFile, tmpFrag).then(
+        audioProcess(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), position, fileName(tmpDest)).done(
+          fs.copy(tmpDest, destFile).then(
+            () => destFile
+          )
+        )
+      )
+    )
 
+
+    copyFiles([srcFile], tmpDir).then(
+      audioProcess(tmpDir, 'insertFragment', fragmentFile, pos, destFile)
+    )
+  }
+
+  module.exports.deleteAudio = function(inputFile, fromPos, toPos, outputFile) {
+    let inputFileName = inputFile.split('/').pop();
+    createTempFolder(inputFile)
+    .then((folderPath) => {
+      audioProcess(folderPath, 'deleteAudio', inputFileName, fromPos, toPos)
+      .then((output) => {
+        // Copy the temporary output file to outputFile location
+
+        // Remove the temporary folder
+
+      })
+      .catch((err) => {
+        reject(err);
+      })
+    })
+    .catch((err) => {
+      reject(err)
+    })
+  }
+
+  // deletes section, resolves to destFile
+  deleteSection(srcFile, pos, len, [destFile]) {
+    if (!destFile) destFile = tempy.file() // if no dest specified, returns tmp
+    return copyFiles([srcFile], tmpDir).then(
+      audioProcess(tmpDir, 'insertFragment', fragmentFile, pos, destFile)
+    )
+
+
+    audioProcess(folderPath, 'deleteAudio', inputFileName, fromPos, toPos)
+  }
+
+
+  // - replaceSection(srcFile, fragmentFile, pos, len) // replaces section, resolves to destFile
+  // - splitFile(srcFile, pos, [destFiles]) // splits audio at pos
+  // - audioMetaData(srcFile) // returns file size, audio length, format, bitrate etc.
+  // - normalizeLevels(srcFile, [destFile], [options]) // adjust volume levels
+  // - normalizeWhiteSpace(srcFile, [destFile], [options]) // time between words and start/stop
 
 
 
@@ -46,6 +114,23 @@ module.exports = AudioToolkit
 /*
    Internal utilities, not exported
 */
+
+function
+
+function changeExt(fp, ext) {
+  let parts = fp.split('.')
+  parts[parts.length-1] = ext
+  return parts.join('.')
+}
+function fileName(fp, ext) {
+  let fn = path.basename(fp)
+  if (ext) fn = changeExt(fp, ext)
+  return fn
+}
+
+function fileExt(fp) {
+  return path.extname(fp)
+}
 
 // resolves to a new temp directory unless tmpDir already exists
 getTmpDir(tmpDir) {
@@ -67,27 +152,12 @@ copyFiles(srcFiles, destDir) {
 
 
 
+
+
+
+
 /*
 
-
-
-module.exports.insertAudio = function(inputFile, segmentFile, atPos, outputFile) {
-  let inputFileName = inputFile.split('/').pop();
-  let segmentFileName = segmentFile.split('/').pop();
-  createTempFolder(inputFile, segmentFile)
-  .then((folderpath) => {
-    audioProcess(folderPath, 'insertAudio', inputFileName, segmentFileName, atPos)
-    .then((output) => {
-      // Copy the temporary output file to outputFile location
-
-      // Remove the temporary folder
-
-    })
-  })
-  .catch((err) => {
-    reject(err)
-  })
-}
 
 module.exports.deleteAudio = function(inputFile, fromPos, toPos, outputFile) {
   let inputFileName = inputFile.split('/').pop();
