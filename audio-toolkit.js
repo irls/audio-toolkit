@@ -58,6 +58,11 @@ class AudioToolkit {
     const tmpDestFile = tmpDestDir + 'destAudio.' + path.extname(srcFile)
     return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
       //    return copyFilesArray(srcFiles, tmpSrcDir).then(
+      /**
+# Merges all files in the /data folder and saves to destFile, converting format if necessary.
+# Parameters:
+# $1 (destFile) = The destination filename, including extension.
+       */
       processAudio(tmpSrcDir, 'mergeFiles', tmpDestDir, fileName(tmpDestFile)).then(
         fs.copy(tmpDestFile, destFile).then(
           () => { return destFile }
