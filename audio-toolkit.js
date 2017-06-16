@@ -181,6 +181,11 @@ class AudioToolkit {
     const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
+      /**
+# Gets audio metadata from a source audio file within the /data folder.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+       */
       processAudio(tmpDir, 'getMetaData', fileName(tmpSrc)).done(
         (metaData) => metaData
       )
