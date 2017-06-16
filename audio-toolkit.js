@@ -49,24 +49,22 @@ class AudioToolkit {
   }
 
   // joins files, resolves to destFile
-  mergeFiles(srcFiles, destFile) {
-    if (!srcFile||!destFile)
-     throw "MergeFiles warning: srcFile & destFile are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+  mergeFiles(srcFiles, destFilePath) {
+//    if (!srcFile||!destFile)
+//     throw "MergeFiles warning: srcFile & destFile are required fields"
+//    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpSrcDir = tempy.directory()  + '/'
-    const tmpDestDir = tempy.directory()  + '/'
-    const tmpDestFile = tmpDestDir + 'destAudio.' + path.extname(srcFile)
-    return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
-      //    return copyFilesArray(srcFiles, tmpSrcDir).then(
+    const tmpDestFile = tmpSrcDir + 'destAudio.' + path.extname(destFilePath)
+    return Promise.All(srcFiles.map((src) => fs.copy(src, tmpSrcDir))).then(
       /**
 # Merges all files in the /data folder and saves to destFile, converting format if necessary.
 # Parameters:
 # $1 (destFileName) = The destination filename, including extension.
        */
-      processAudio(tmpSrcDir, 'mergeFiles', destFileName).then(
-        fs.copy(tmpDestFile, destFile).then(
-          () => { return destFile }
-        )
+      processAudio(tmpSrcDir, 'mergeFiles', tmpDestFile).then(
+        // TODO: Move the file from the temporary folder to the intended destination
+        
+        
       )
     )
   }
