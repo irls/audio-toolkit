@@ -79,7 +79,15 @@ class AudioToolkit {
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
-      processAudio(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), position).done(
+    /**
+# Inserts an audio fragment into a source audio file at a given position.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension
+# $2 (fragmentFileName) = The file name of the fragment audio, with extension
+# $3 (position) = The position at which to insert the fragment audio
+# $4 (destFileName) = The output file name
+     */
+      processAudio(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), position, fileName(tmpDest)).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )

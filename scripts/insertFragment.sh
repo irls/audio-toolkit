@@ -1,19 +1,8 @@
 #!/bin/bash
-
-# #file type
-# ft=$1
-
-# if [ "$1" == "" ]; then
-# 	ft='mp3'
-# fi
-
-# // insert one file into another, resolves to destFile
-# insertFragment(srcFile, fragmentFile, position, [destFile])
-# processAudio(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), position)
-
-# tmpDir: contains source audio files
-# fileName(tmpSrc): source audio file stored in the tmpDir
-# fileName(tmpFrag): source audio file for fragment to be inserted, also in tmpDir
-# fileName(tmpDest): expected target file name, to be placed in tmpDir
-
-ffmpeg -f concat -safe 0 -i <(for f in /data/*.mp3; do echo "file '$f'"; done) -c copy /data/output.wav
+#
+# Inserts an audio fragment into a source audio file at a given position.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (fragmentFileName) = The file name of the fragment audio, with extension.
+# $3 (position) = The position at which to insert the fragment audio.
+# $4 (destFileName) = The output file name.
