@@ -16,6 +16,7 @@ class AudioToolkit {
 
   // resolves to an array of converted files
   convertFormat(srcFiles, destFormat) {
+    //console.log('convertFormat', srcFiles, destFormat)
     if (!srcFiles||!destFormat)
      throw "ConvertFormat warning: srcFile & destFormat are required fields"
     // TODO, check that all extensions in srcFiles match
@@ -28,7 +29,10 @@ class AudioToolkit {
 
     // copy files to tmp directory, process entire folder, resolve array of converted files
     return Promise.all(
-      srcFiles.map(src => fs.copy(src, tmpSrcDir + fileName(src)) )
+      srcFiles.map(src => {
+        fs.copy(src, tmpSrcDir + fileName(src))
+        //console.log('fs.copy',src, tmpSrcDir + fileName(src))
+      })
     ).then(
       processAudio(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir)
     ).then(
@@ -195,17 +199,19 @@ function fileName(fp, ext) {
 }
 
 function processAudio(folderPath, taskName, ...args){
+  //console.log('processAudio', folderPath, taskName)
   return new Promise(function(resolve, reject) {
     //return resolve(true);
-    prepEnvironment().then( () => {
-      let args = join(' ', args)
+  //  prepEnvironment().then( () => {
+      args = args.join(' ')
       let cmd = `'docker' run --rm -d -v ${folderPath}:/data /app/${taskName}.sh ${args}`
       console.log('Exec: '+ cmd)
+      //resolve(true)
       let docker = exec(cmd)
       docker.stdout.on('close', code =>  resolve($(code)) )
       docker.stdout.on('exit', code =>  resolve($(exit)) )
       docker.stdout.on('error', err => reject(err) )
-    })
+    //})
   })
 }
 
