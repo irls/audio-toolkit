@@ -1,20 +1,10 @@
 #!/bin/bash
-
-# #file type
-# ft=$1
-
-# if [ "$1" == "" ]; then
-# 	ft='mp3'
-# fi
-
-# // deletes section, resolves to destFile
-# replaceSection(srcFile, fragmentFile, fromPos, toPos, [destFile])
-# processAudio(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), fromPos, toPos)
-
-# tmpDir: contains source audio file
-# fileName(tmpSrc): source audio file, stored in the tmpDir
-# fileName(tmpFrag): fragment to be inserted, stored in the tmpDir
-# fileName(tmpDest): expected output file name, to be placed in tmpDir
-# fromPos, toPos: start and end positions expressed in ms
-
-ffmpeg -f concat -safe 0 -i <(for f in /data/*.mp3; do echo "file '$f'"; done) -c copy /data/output.wav
+#
+# Replaces a selection of audio within the source file with the audio in a 
+# fragment file. Both source and fragment audio must be in the /data folder.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (fragmentFile) = The file name of the fragment audio, with extension.
+# $3 (fromPos) = The position at which to begin deletion.
+# $4 (toPos) = The position at which to stop deletion.
+# $5 (destFileName) = The output file name.
