@@ -1,6 +1,6 @@
 {
   "name": "audio-toolkit",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "audio-toolkit.js",
   "repository": {
     "type": "git",
