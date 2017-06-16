@@ -202,6 +202,16 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(fs.copy(destfile, tmpDest).then(
+    /**
+# Normalizes audio levels for a source audio file in the /data folder.
+#
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (destFileName) = The file name of the destination audio, with extension.
+#
+# Any additional parameters should be considered as options for the ffmpeg 
+# normalization routine.
+     */
       processAudio(tmpDir, 'normalizeLevels', fileName(tmpSrc), fileName(tmpDest)).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
