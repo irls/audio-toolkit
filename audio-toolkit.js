@@ -157,6 +157,14 @@ class AudioToolkit {
     const tmpDest1 = tmpDir + 'destAudio1.'+ path.extname(srcFile)
     const tmpDest2 = tmpDir + 'destAudio2.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
+      /**
+# Splits a file in the /data folder into two files.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (position) = The position at which the source file should be split.
+# $3 (destFile1) = The filename for the audio before the split position.
+# $4 (destFile2) = The filename for the audio after the split position.
+       */
       processAudio(tmpDir, 'splitFile', fileName(tmpSrc), fileName(tmpDest1),  fileName(tmpDest2), position).done(
         // copy output file to destFile and resolve to array of 2 destFiles
         fs.copy(tmpDest1, destPart1).then(fs.copy(tmpDest2, destPart2).done(
