@@ -33,7 +33,7 @@ class AudioToolkit {
       processAudio(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir)
     ).then(
       globby(tmpDestDir+'*.'+destFormat).then(paths => {
-         console.log('globby results in: '+tmpDestDir+'*.'+destFormat, paths)
+         //console.log('globby results in: '+tmpDestDir+'*.'+destFormat, paths)
          return paths
       })
     )
@@ -195,22 +195,27 @@ function fileName(fp, ext) {
 }
 
 function processAudio(folderPath, taskName, ...args){
+  //console.log('processAudio', folderPath, taskName)
   return new Promise(function(resolve, reject) {
     //return resolve(true);
     prepEnvironment().then( () => {
+      console.log('but not here')
+
       let args = join(' ', args)
       let cmd = `'docker' run --rm -d -v ${folderPath}:/data /app/${taskName}.sh ${args}`
       console.log('Exec: '+ cmd)
-      let docker = exec(cmd)
-      docker.stdout.on('close', code =>  resolve($(code)) )
-      docker.stdout.on('exit', code =>  resolve($(exit)) )
-      docker.stdout.on('error', err => reject(err) )
+      resolve(true)
+      // let docker = exec(cmd)
+      // docker.stdout.on('close', code =>  resolve($(code)) )
+      // docker.stdout.on('exit', code =>  resolve($(exit)) )
+      // docker.stdout.on('error', err => reject(err) )
     })
   })
 }
 
 function prepEnvironment() {
   return new Promise(function(resolve, reject) {
+    console.log('got here')
     let docker = exec('"eval $(docker-machine env default)"')
     docker.stdout.on('close', code => resolve($(code)) )
     docker.stdout.on('exit', code =>  resolve($(exit)) )
