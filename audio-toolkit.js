@@ -34,7 +34,12 @@ class AudioToolkit {
         //console.log('fs.copy',src, tmpSrcDir + fileName(src))
       })
     ).then(
-      processAudio(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir)
+      /**
+# Converts all files in the /data folder to a specified format.
+# Parameters:
+# $1 (destFormat) = The destination format.
+       */
+      processAudio(tmpSrcDir, 'convertFormat', destFormat)
     ).then(
       globby(tmpDestDir+'*.'+destFormat).then(paths => {
          console.log('globby results in: '+tmpDestDir+'*.'+destFormat, paths)
@@ -205,7 +210,7 @@ function processAudio(folderPath, taskName, ...args){
     //return resolve(true);
   //  prepEnvironment().then( () => {
       args = args.join(' ')
-      let cmd = `'docker' run --rm -d -v ${folderPath}:/data /app/${taskName}.sh ${args}`
+      let cmd = `'docker' run --rm -d -v ${folderPath}:/data dockerffmpeg ${taskName}.sh ${args}`
       console.log('Exec: '+ cmd)
       //resolve(true)
       let docker = exec(cmd)
