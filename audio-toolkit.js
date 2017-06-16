@@ -219,22 +219,6 @@ class AudioToolkit {
     ))
   }
 
-  // reduced excess silence between words and at either end of audio file
-  normalizeSilence(srcFile, destfile) {
-    if (!srcFile) throw "NormalizeSilence warning: srcFile is a required field"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
-    const tmpDir = tempy.directory()  + '/'
-    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
-    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(
-      processAudio(tmpDir, 'normalizeSilence', fileName(tmpSrc), fileName(tmpDest)).done(
-        // copy output file to destFile and resolve to destFile
-        fs.copy(tmpDest, destFile).then( () => destFile )
-      )
-    )
-  }
-
-
 
 }
 
