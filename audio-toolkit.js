@@ -61,9 +61,9 @@ class AudioToolkit {
       /**
 # Merges all files in the /data folder and saves to destFile, converting format if necessary.
 # Parameters:
-# $1 (destFile) = The destination filename, including extension.
+# $1 (destFileName) = The destination filename, including extension.
        */
-      processAudio(tmpSrcDir, 'mergeFiles', tmpDestDir, fileName(tmpDestFile)).then(
+      processAudio(tmpSrcDir, 'mergeFiles', destFileName).then(
         fs.copy(tmpDestFile, destFile).then(
           () => { return destFile }
         )
