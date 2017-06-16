@@ -103,6 +103,14 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
+      /**
+# Deletes a selection of audio from a source audio file in the /data folder.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (fromPos) = The position at which to begin deletion.
+# $3 (toPos) = The position at which to stop deletion.
+# $4 (destFileName) = The output file name.
+       */
       processAudio(tmpDir, 'deleteSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
