@@ -53,7 +53,7 @@ getMetaData(srcFile)
 // normalize volume levels
 normalizeLevels(srcFile, [destfile], [options])
 
-// reduced excess silence between words and at either end of audio file
+// reduces excess silence between words and at either end of audio file
 normalizeSilence(srcFile, [destfile])
 
 ```

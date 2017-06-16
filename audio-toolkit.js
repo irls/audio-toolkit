@@ -103,8 +103,9 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
-      processAudio(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
+    return Promise.all([ fs.copy(srcFile, tmpSrc),
+      fs.copy(fragementFile, tmpFrag) ]).done(
+      processAudio(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), fromPos, toPos).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
@@ -122,7 +123,7 @@ class AudioToolkit {
     const tmpDest1 = tmpDir + 'destAudio1.'+ path.extname(srcFile)
     const tmpDest2 = tmpDir + 'destAudio2.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
-      processAudio(tmpDir, 'splitFile', fileName(tmpSrc), fileName(tmpDest1),  fileName(tmpDest1), position).done(
+      processAudio(tmpDir, 'splitFile', fileName(tmpSrc), fileName(tmpDest1),  fileName(tmpDest2), position).done(
         // copy output file to destFile and resolve to array of 2 destFiles
         fs.copy(tmpDest1, destPart1).then(fs.copy(tmpDest2, destPart2).done(
           () => [destPart1, destPart2]
