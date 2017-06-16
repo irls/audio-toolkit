@@ -103,8 +103,9 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
-      processAudio(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
+    return Promise.all([ fs.copy(srcFile, tmpSrc),
+      fs.copy(fragementFile, tmpFrag) ]).done(
+      processAudio(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), fromPos, toPos).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
