@@ -1,18 +1,10 @@
 #!/bin/bash
-
-# #file type
-# ft=$1
-
-# if [ "$1" == "" ]; then
-# 	ft='mp3'
-# fi
-
-# // normalize volume levels
-# normalizeLevels(srcFile, [destfile], [options])
-# processAudio(tmpDir, 'normalizeLevels', fileName(tmpSrc), fileName(tmpDest))
-
-# tmpDir: contains source audio file
-# fileName(tmpSrc): source audio file, stored in the tmpDir
-# fileName(tmpDest): output audio file, also stored n the tmpDir
-
-ffmpeg -f concat -safe 0 -i <(for f in /data/*.mp3; do echo "file '$f'"; done) -c copy /data/output.wav
+#
+# Normalizes audio levels for a source audio file in the /data folder.
+#
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (destFileName) = The file name of the destination audio, with extension.
+#
+# Any additional parameters should be considered as options for the ffmpeg 
+# normalization routine.

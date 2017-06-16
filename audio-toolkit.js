@@ -34,7 +34,12 @@ class AudioToolkit {
         //console.log('fs.copy',src, tmpSrcDir + fileName(src))
       })
     ).then(
-      processAudio(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir)
+      /**
+# Converts all files in the /data folder to a specified format.
+# Parameters:
+# $1 (destFormat) = The destination format.
+       */
+      processAudio(tmpSrcDir, 'convertFormat', destFormat)
     ).then(
       globby(tmpDestDir+'*.'+destFormat).then(paths => {
          console.log('globby results in: '+tmpDestDir+'*.'+destFormat, paths)
@@ -44,19 +49,22 @@ class AudioToolkit {
   }
 
   // joins files, resolves to destFile
-  mergeFiles(srcFiles, destFile) {
-    if (!srcFile||!destFile)
-     throw "MergeFiles warning: srcFile & destFile are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+  mergeFiles(srcFiles, destFilePath) {
+//    if (!srcFile||!destFile)
+//     throw "MergeFiles warning: srcFile & destFile are required fields"
+//    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpSrcDir = tempy.directory()  + '/'
-    const tmpDestDir = tempy.directory()  + '/'
-    const tmpDestFile = tmpDestDir + 'destAudio.' + path.extname(srcFile)
-    return Promise.All(srcFiles.map((src) => fs.copy(src, destDir))).then(
-      //    return copyFilesArray(srcFiles, tmpSrcDir).then(
-      processAudio(tmpSrcDir, 'mergeFiles', tmpDestDir, fileName(tmpDestFile)).then(
-        fs.copy(tmpDestFile, destFile).then(
-          () => { return destFile }
-        )
+    const tmpDestFile = tmpSrcDir + 'destAudio.' + path.extname(destFilePath)
+    return Promise.All(srcFiles.map((src) => fs.copy(src, tmpSrcDir))).then(
+      /**
+# Merges all files in the /data folder and saves to destFile, converting format if necessary.
+# Parameters:
+# $1 (destFileName) = The destination filename, including extension.
+       */
+      processAudio(tmpSrcDir, 'mergeFiles', tmpDestFile).then(
+        // TODO: Move the file from the temporary folder to the intended destination
+        
+        
       )
     )
   }
@@ -71,7 +79,15 @@ class AudioToolkit {
     const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
-      processAudio(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), position).done(
+    /**
+# Inserts an audio fragment into a source audio file at a given position.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension
+# $2 (fragmentFileName) = The file name of the fragment audio, with extension
+# $3 (position) = The position at which to insert the fragment audio
+# $4 (destFileName) = The output file name
+     */
+      processAudio(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), position, fileName(tmpDest)).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
@@ -87,6 +103,14 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
+      /**
+# Deletes a selection of audio from a source audio file in the /data folder.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (fromPos) = The position at which to begin deletion.
+# $3 (toPos) = The position at which to stop deletion.
+# $4 (destFileName) = The output file name.
+       */
       processAudio(tmpDir, 'deleteSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
@@ -105,6 +129,16 @@ class AudioToolkit {
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return Promise.all([ fs.copy(srcFile, tmpSrc),
       fs.copy(fragementFile, tmpFrag) ]).done(
+      /**
+# Replaces a selection of audio within the source file with the audio in a 
+# fragment file. Both source and fragment audio must be in the /data folder.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (fragmentFile) = The file name of the fragment audio, with extension.
+# $3 (fromPos) = The position at which to begin deletion.
+# $4 (toPos) = The position at which to stop deletion.
+# $5 (destFileName) = The output file name.
+      */
       processAudio(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), fromPos, toPos).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
@@ -123,6 +157,14 @@ class AudioToolkit {
     const tmpDest1 = tmpDir + 'destAudio1.'+ path.extname(srcFile)
     const tmpDest2 = tmpDir + 'destAudio2.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
+      /**
+# Splits a file in the /data folder into two files.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (position) = The position at which the source file should be split.
+# $3 (destFile1) = The filename for the audio before the split position.
+# $4 (destFile2) = The filename for the audio after the split position.
+       */
       processAudio(tmpDir, 'splitFile', fileName(tmpSrc), fileName(tmpDest1),  fileName(tmpDest2), position).done(
         // copy output file to destFile and resolve to array of 2 destFiles
         fs.copy(tmpDest1, destPart1).then(fs.copy(tmpDest2, destPart2).done(
@@ -139,6 +181,11 @@ class AudioToolkit {
     const tmpDir = tempy.directory()  + '/'
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
+      /**
+# Gets audio metadata from a source audio file within the /data folder.
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+       */
       processAudio(tmpDir, 'getMetaData', fileName(tmpSrc)).done(
         (metaData) => metaData
       )
@@ -155,28 +202,22 @@ class AudioToolkit {
     const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
     const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(fs.copy(destfile, tmpDest).then(
+    /**
+# Normalizes audio levels for a source audio file in the /data folder.
+#
+# Parameters:
+# $1 (sourceFileName) = The file name of the source audio, with extension.
+# $2 (destFileName) = The file name of the destination audio, with extension.
+#
+# Any additional parameters should be considered as options for the ffmpeg 
+# normalization routine.
+     */
       processAudio(tmpDir, 'normalizeLevels', fileName(tmpSrc), fileName(tmpDest)).done(
         // copy output file to destFile and resolve to destFile
         fs.copy(tmpDest, destFile).then( () => destFile )
       )
     ))
   }
-
-  // reduced excess silence between words and at either end of audio file
-  normalizeSilence(srcFile, destfile) {
-    if (!srcFile) throw "NormalizeSilence warning: srcFile is a required field"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
-    const tmpDir = tempy.directory()  + '/'
-    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
-    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(
-      processAudio(tmpDir, 'normalizeSilence', fileName(tmpSrc), fileName(tmpDest)).done(
-        // copy output file to destFile and resolve to destFile
-        fs.copy(tmpDest, destFile).then( () => destFile )
-      )
-    )
-  }
-
 
 
 }
@@ -205,7 +246,7 @@ function processAudio(folderPath, taskName, ...args){
     //return resolve(true);
   //  prepEnvironment().then( () => {
       args = args.join(' ')
-      let cmd = `'docker' run --rm -d -v ${folderPath}:/data /app/${taskName}.sh ${args}`
+      let cmd = `'docker' run --rm -d -v ${folderPath}:/data dockerffmpeg ${taskName}.sh ${args}`
       console.log('Exec: '+ cmd)
       //resolve(true)
       let docker = exec(cmd)

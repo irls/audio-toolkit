@@ -1,19 +1,10 @@
 #!/bin/bash
+#
+# Converts all files in the /data folder to a specified format.
+# Parameters:
+# $1 (destFormat) = The destination format.
 
-# #file type
-# ft=$1
-
-# if [ "$1" == "" ]; then
-# 	ft='mp3'
-# fi
-
-# // resolves to an array of converted files
-# convertFormat(srcFiles, destFormat)
-# processAudio(tmpSrcDir, 'convertFormat', destFormat, tmpDestDir)
-
-# tmpSrcDir: contains source audio files
-# destFormat: destination format and file extensions
-# tmpDestDir: empty dir for converted files
-
-
-ffmpeg -f concat -safe 0 -i <(for f in /data/*.mp3; do echo "file '$f'"; done) -c copy /data/output.wav
+for i in /data/*.*;
+  do name=`echo $i | cut -d'.' -f1`;
+  ffmpeg -i "$i" "/data/${name}.$1";
+done
