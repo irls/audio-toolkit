@@ -15,34 +15,31 @@ class AudioToolkit {
   }
 
   // resolves to an array of converted files
-  convertFormat(srcFiles, destFormat) {
-    //console.log('convertFormat', srcFiles, destFormat)
-    if (!srcFiles||!destFormat)
-     throw "ConvertFormat warning: srcFile & destFormat are required fields"
+  convertFormat(srcFiles, toFormat) {
+    //console.log('convertFormat', srcFiles, toFormat)
+    if (!srcFiles||!toFormat)
+     throw "ConvertFormat warning: srcFile & toFormat are required fields"
     // TODO, check that all extensions in srcFiles match
-    if (!destFormat) destFormat = 'flac' // default format
-    const tmpSrcDir = tempy.directory()  + '/'
-    const tmpDestDir = tempy.directory()  + '/'
-
-    //console.log(tmpSrcDir, tmpDestDir)
-    //console.log('srcFiles:', srcFiles.join("\n"))
-
+    // TODO, check toFormat against a list of availble formats
+    if (!toFormat) toFormat = 'flac' // default format
+    const tmpDir = tempy.Directory +'/'
+    const srcDir = 'source/'
+    const destDir = 'dest/'
     // copy files to tmp directory, process entire folder, resolve array of converted files
-    return Promise.all(
-      srcFiles.map(src => {
-        fs.copy(src, tmpSrcDir + fileName(src))
-        //console.log('fs.copy',src, tmpSrcDir + fileName(src))
-      })
+    return Promise.all([
+      // create the subdirs
+      fs.ensureDir(tmpDir+srcDir), fs.ensureDir(tmpDir+destDir)
+    ]).then(Promise.all(
+      srcFiles.map(src => fs.copy(src, srcDir + fileName(src)) )
+    )).then(
+      // Converts all files in the /data/source/ folder to a specified format.
+      // $1 (toFormat): The destination format.
+      // $2 (srcDir): Folder containing source files
+      // $3 (destDir): Folder with converted files
+      processAudio(tmpDir, 'convertFormat', toFormat, srcDir, destDir)
     ).then(
-      /**
-# Converts all files in the /data folder to a specified format.
-# Parameters:
-# $1 (destFormat) = The destination format.
-       */
-      processAudio(tmpSrcDir, 'convertFormat', destFormat)
-    ).then(
-      globby(tmpDestDir+'*.'+destFormat).then(paths => {
-         console.log('globby results in: '+tmpDestDir+'*.'+destFormat, paths)
+      globby(destDir+'*.'+toFormat).then(paths => {
+         //console.log('globby results in: '+destDir+'*.'+toFormat, paths)
          return paths
       })
     )
@@ -63,8 +60,8 @@ class AudioToolkit {
        */
       processAudio(tmpSrcDir, 'mergeFiles', tmpDestFile).then(
         // TODO: Move the file from the temporary folder to the intended destination
-        
-        
+
+
       )
     )
   }
@@ -130,7 +127,7 @@ class AudioToolkit {
     return Promise.all([ fs.copy(srcFile, tmpSrc),
       fs.copy(fragementFile, tmpFrag) ]).done(
       /**
-# Replaces a selection of audio within the source file with the audio in a 
+# Replaces a selection of audio within the source file with the audio in a
 # fragment file. Both source and fragment audio must be in the /data folder.
 # Parameters:
 # $1 (sourceFileName) = The file name of the source audio, with extension.
@@ -209,7 +206,7 @@ class AudioToolkit {
 # $1 (sourceFileName) = The file name of the source audio, with extension.
 # $2 (destFileName) = The file name of the destination audio, with extension.
 #
-# Any additional parameters should be considered as options for the ffmpeg 
+# Any additional parameters should be considered as options for the ffmpeg
 # normalization routine.
      */
       processAudio(tmpDir, 'normalizeLevels', fileName(tmpSrc), fileName(tmpDest)).done(
