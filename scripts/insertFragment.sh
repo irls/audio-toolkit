@@ -7,3 +7,7 @@
 # $2 fragFile: The file name of the fragment audio, with extension
 # $3 position: The position at which to insert the fragment audio
 # $4 outputFile: The output file name
+
+# TODO
+# split file in two parts
+# merge the three files into outputFile

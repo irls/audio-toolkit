@@ -36,7 +36,7 @@ class AudioToolkit {
       // $1 toFormat: The destination format.
       // $2 inputDir: Folder containing source files
       // $3 outputDir: Folder with converted files
-      processAudio(tmpDir, 'convertFormat', toFormat, inputDir, outputDir)
+      processAudio(tmpDir,'convertFormat', toFormat,inputDir,outputDir)
     ).then(
       globby(outputDir+'*.'+toFormat).then(paths => {
          //console.log('globby results in: '+destDir+'*.'+toFormat, paths)
@@ -60,7 +60,7 @@ class AudioToolkit {
         // #  converting format if necessary.
         // # $1 (inputDir): source files
         // # $2 (outputFile): merged output file
-      processAudio(tmpDir, 'mergeFiles', inputDir, outputFile)
+      processAudio(tmpDir,'mergeFiles', inputDir,outputFile)
     ).then (
       fs.copy(tmpDir+outputFile, destFile)
     )
@@ -72,23 +72,23 @@ class AudioToolkit {
      throw "InsertFragment warning: srcFile, fragmentFile and position are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpDir = tempy.directory()  + '/'
-    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
-    const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
-    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(fs.copy(fragementFile, tmpFrag).then(
-    /**
-# Inserts an audio fragment into a source audio file at a given position.
-# Parameters:
-# $1 (sourceFileName) = The file name of the source audio, with extension
-# $2 (fragmentFileName) = The file name of the fragment audio, with extension
-# $3 (position) = The position at which to insert the fragment audio
-# $4 (destFileName) = The output file name
-     */
-      processAudio(tmpDir, 'insertFragment', fileName(tmpSrc), fileName(tmpFrag), position, fileName(tmpDest)).done(
-        // copy output file to destFile and resolve to destFile
-        fs.copy(tmpDest, destFile).then( () => destFile )
-      )
-    ))
+    const inputFile = 'input.'+ path.extname(srcFile)
+    const fragFile = 'frament.'+ path.extname(fragmentFile)
+    const outputFile = 'output.'+ path.extname(srcFile)
+    return Promise.all([
+      fs.copy(srcFile, inputFile),
+      fs.copy(fragementFile, fragFile)
+    ]).done(
+      // # Inserts an audio fragment into a source audio file at a given position.
+      // # $1 inputFile: The file name of the source audio, with extension
+      // # $2 fragFile: The file name of the fragment audio, with extension
+      // # $3 position: The position at which to insert the fragment audio
+      // # $4 outputFile: The output file name
+      processAudio(tmpDir,'insertFragment', inputFile,fragFile,position,outputFile)
+    ).done(
+      // copy output file to destFile and resolve to destFile
+      fs.copy(tmpDir + outputFile, destFile).then( () => destFile )
+    )
   }
 
   // deletes section, resolves to destFile
@@ -97,20 +97,17 @@ class AudioToolkit {
      throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpDir = tempy.directory()  + '/'
-    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
-    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(
-      /**
-# Deletes a selection of audio from a source audio file in the /data folder.
-# Parameters:
-# $1 (sourceFileName) = The file name of the source audio, with extension.
-# $2 (fromPos) = The position at which to begin deletion.
-# $3 (toPos) = The position at which to stop deletion.
-# $4 (destFileName) = The output file name.
-       */
-      processAudio(tmpDir, 'deleteSection', fileName(tmpSrc), fileName(tmpDest), fromPos, toPos).done(
+    const inputFile = 'input.'+ path.extname(srcFile)
+    const outputFile = 'output.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpDir+inputFile).then(
+      // Deletes a selection of audio from a source audio file in the /data folder.
+      // $1 inputFile: The file name of the source audio, with extension.
+      // $2 outputFile: The output file name.
+      // $3 fromPos: The position at which to begin deletion.
+      // $4 toPos: The position at which to stop deletion.
+      processAudio(tmpDir, 'deleteSection', inputFile,outputFile,fromPos,toPos).done(
         // copy output file to destFile and resolve to destFile
-        fs.copy(tmpDest, destFile).then( () => destFile )
+        fs.copy(tmpDir+outputFile, destFile).then( () => destFile )
       )
     )
   }
@@ -121,69 +118,64 @@ class AudioToolkit {
      throw "ReplaceSection warning: srcFile, fragmentFile, fromPos and toPos are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpDir = tempy.directory()  + '/'
-    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
-    const tmpFrag = tmpDir + 'fragAudio.'+ path.extname(srcFile)
-    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return Promise.all([ fs.copy(srcFile, tmpSrc),
-      fs.copy(fragementFile, tmpFrag) ]).done(
-      /**
-# Replaces a selection of audio within the source file with the audio in a
-# fragment file. Both source and fragment audio must be in the /data folder.
-# Parameters:
-# $1 (sourceFileName) = The file name of the source audio, with extension.
-# $2 (fragmentFile) = The file name of the fragment audio, with extension.
-# $3 (fromPos) = The position at which to begin deletion.
-# $4 (toPos) = The position at which to stop deletion.
-# $5 (destFileName) = The output file name.
-      */
-      processAudio(tmpDir, 'replaceSection', fileName(tmpSrc), fileName(tmpFrag), fileName(tmpDest), fromPos, toPos).done(
-        // copy output file to destFile and resolve to destFile
-        fs.copy(tmpDest, destFile).then( () => destFile )
-      )
-    ))
+    const inputFile = 'input.'+ path.extname(srcFile)
+    const fragFile = 'fragment.'+ path.extname(srcFile)
+    const outputFile = 'output.'+ path.extname(srcFile)
+    return Promise.all([
+      fs.copy(srcFile, tmpDir + inputFile),
+      fs.copy(fragmentFile, fragFile) ]
+    ).done(
+      // Replaces a range within the inputFile with the fragFile.
+      // $1 inputFile: The file name of the source audio, with extension.
+      // $2 fragFile: The file name of the fragment audio, with extension.
+      // $3 outputFile: The output file name.
+      // $4 fromPos: The position at which to begin deletion.
+      // $5 toPos: The position at which to stop deletion.
+      processAudio(tmpDir,'replaceSection', inputFile,fragFile,outputFile,fromPos,toPos)
+    ).done(
+      // copy output file to destFile and resolve to destFile
+      fs.copy(tmpDest, destFile).then( () => destFile )
+    )
   }
 
   // splits audio and resolves to array of two dest files
   splitFile(srcFile, position, destPart1, destPart2) {
     if (!srcFile||!position||!toPos)
-     throw "SplitFile warning: srcFile & position are required fields"
+      throw "SplitFile warning: srcFile & position are required fields"
     if (!destPart1) destPart1 = tempy.file({extension: path.extname(srcFile)})
     if (!destPart2) destPart2 = tempy.file({extension: path.extname(srcFile)})
     const tmpDir = tempy.directory()  + '/'
-    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
-    const tmpDest1 = tmpDir + 'destAudio1.'+ path.extname(srcFile)
-    const tmpDest2 = tmpDir + 'destAudio2.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(
-      /**
-# Splits a file in the /data folder into two files.
-# Parameters:
-# $1 (sourceFileName) = The file name of the source audio, with extension.
-# $2 (position) = The position at which the source file should be split.
-# $3 (destFile1) = The filename for the audio before the split position.
-# $4 (destFile2) = The filename for the audio after the split position.
-       */
-      processAudio(tmpDir, 'splitFile', fileName(tmpSrc), fileName(tmpDest1),  fileName(tmpDest2), position).done(
-        // copy output file to destFile and resolve to array of 2 destFiles
-        fs.copy(tmpDest1, destPart1).then(fs.copy(tmpDest2, destPart2).done(
-          () => [destPart1, destPart2]
-        ))
-      )
+    const inputFile = 'input.'+ path.extname(srcFile)
+    const outputFile1 = 'output1.'+ path.extname(srcFile)
+    const outputFile2 = 'output2.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpSrc).done(
+      // Splits inputFile into two files: outputFile1 & outputFile2
+      // $1 inputFile: The file name of the source audio, with extension.
+      // $2 outputFile1: The filename for the audio before the split position.
+      // $3 outputFile2: The filename for the audio after the split position.
+      // $4 position: The position at which the source file should be split.
+      processAudio(tmpDir,'splitFile', inputFile,outputFile1,outputFile2,position)
+    ).done(
+      // copy out output files to destFile and resolve to array of 2 destFiles
+      Promise.all([
+        fs.copy(tmpDir+outputFile1, destPart1),
+        fs.copy(tmpDir+outputFile2, destPart2)
+      ])
+    ).done(
+      // resolve to an array of two files
+      () => [destPart1, destPart2]
     )
   }
 
   // returns obj with file size, audio length, format, bitrate etc.
   getMetaData(srcFile) {
-    if (!srcFile)
-     throw "GetMetaData warning: srcFile is a required field"
+    if (!srcFile) throw "GetMetaData warning: srcFile is a required field"
     const tmpDir = tempy.directory()  + '/'
-    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
+    const inputFile = 'input.'+ path.extname(srcFile)
     return fs.copy(srcFile, tmpSrc).then(
-      /**
-# Gets audio metadata from a source audio file within the /data folder.
-# Parameters:
-# $1 (sourceFileName) = The file name of the source audio, with extension.
-       */
-      processAudio(tmpDir, 'getMetaData', fileName(tmpSrc)).done(
+      //  Gets audio metadata from a source audio file within the /data folder.
+      //  $1 inputFile: The file name of the source audio, with extension.
+      processAudio(tmpDir,'getMetaData', inputFile).done(
         (metaData) => metaData
       )
     )
@@ -192,27 +184,23 @@ class AudioToolkit {
   // normalize volume levels
   normalizeLevels(srcFile, destFile, options) {
     // TODO: implement some options
-    if (!srcFile)
-     throw "NormalizeLevels warning: srcFile is a required field"
+    if (!srcFile) throw "NormalizeLevels warning: srcFile is a required field"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpDir = tempy.directory()  + '/'
-    const inputFile = 'source.'+ path.extname(srcFile)
+    const inputFile = 'input.'+ path.extname(srcFile)
     const outputFile = 'output.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpDir+inputFile).done(
-    /**
-      # Normalizes audio levels for a source audio file in the /data folder.
-      #
-      # Parameters:
-      # $1 (inputFile) = The file name of the source audio, with extension.
-      # $2 (outputFile) = The file name of the destination audio, with extension.
-      #
-      # Any additional parameters should be considered as options for the ffmpeg
-      # normalization routine.
-     */
-      processAudio(tmpDir, 'normalizeLevels', inputFile, outputFile)
+    return fs.copy(srcFile, tmpDir + inputFile).done(
+      // Normalizes audio levels for a source audio file in the /data folder.
+      // $1 inputFile: The file name of the source audio, with extension.
+      // $2 outputFile: The file name of the destination audio, with extension.
+      // TODO: Any additional parameters should be considered as options for the ffmpeg
+      // normalization routine.
+      processAudio(tmpDir,'normalizeLevels', inputFile,outputFile)
     ).done(
-        // copy output file to destFile and resolve to destFile
-        fs.copy(tmpDir+outputFile, destFile).done( () => destFile )
+      // copy output file to destFile and resolve to destFile
+      fs.copy(tmpDir+outputFile, destFile)
+    ).done(
+      () => destFile
     )
   }
 
