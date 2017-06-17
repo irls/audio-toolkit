@@ -246,6 +246,9 @@ function processAudio(folderPath, taskName, ...args){
     //return resolve(true);
   //  prepEnvironment().then( () => {
       args = args.join(' ')
+      // IMPORTANT: this command will NOT work unless the docker image is built
+      // and properly tagged as "dockerffmpeg". Should be done at npm install.
+      // Use the following command: docker build -t dockerffmpeg .
       let cmd = `'docker' run --rm -d -v ${folderPath}:/data dockerffmpeg ${taskName}.sh ${args}`
       console.log('Exec: '+ cmd)
       //resolve(true)

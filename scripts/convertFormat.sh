@@ -6,5 +6,5 @@
 
 for i in /data/*.*;
   do name=`echo $i | cut -d'.' -f1`;
-  ffmpeg -i "$i" "/data/${name}.$1";
+  ffmpeg -i "$i" "${name}.$1";
 done

@@ -7,4 +7,4 @@ ADD ./scripts /app
 
 WORKDIR /app
 
-ENTRYPOINT bash
+ENTRYPOINT ["bash"]
