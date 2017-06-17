@@ -23,22 +23,22 @@ class AudioToolkit {
     // TODO, check toFormat against a list of availble formats
     if (!toFormat) toFormat = 'flac' // default format
     const tmpDir = tempy.Directory +'/'
-    const srcDir = 'source/'
-    const destDir = 'dest/'
+    const inputDir = 'input/'
+    const outputDir = 'output/'
     // copy files to tmp directory, process entire folder, resolve array of converted files
     return Promise.all([
       // create the subdirs
-      fs.ensureDir(tmpDir+srcDir), fs.ensureDir(tmpDir+destDir)
+      fs.ensureDir(tmpDir + inputDir), fs.ensureDir(tmpDir + outputDir)
     ]).then(Promise.all(
-      srcFiles.map(src => fs.copy(src, srcDir + fileName(src)) )
+      srcFiles.map(src => fs.copy(src, inputDir + fileName(src)) )
     )).then(
       // Converts all files in the /data/source/ folder to a specified format.
-      // $1 (toFormat): The destination format.
-      // $2 (srcDir): Folder containing source files
-      // $3 (destDir): Folder with converted files
-      processAudio(tmpDir, 'convertFormat', toFormat, srcDir, destDir)
+      // $1 toFormat: The destination format.
+      // $2 inputDir: Folder containing source files
+      // $3 outputDir: Folder with converted files
+      processAudio(tmpDir, 'convertFormat', toFormat, inputDir, outputDir)
     ).then(
-      globby(destDir+'*.'+toFormat).then(paths => {
+      globby(outputDir+'*.'+toFormat).then(paths => {
          //console.log('globby results in: '+destDir+'*.'+toFormat, paths)
          return paths
       })
@@ -51,16 +51,16 @@ class AudioToolkit {
       throw "MergeFiles warning: srcFile & destFile are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpDir = tempy.directory()  + '/'
-    const srcDir = 'source/'
+    const inputDir = 'input/'
     const outputFile = 'output.' + path.extname(destFile)
     return Promise.All(
       srcFiles.map((src) => fs.copy(src, tmpDir))
     ).then(
         // # Merges all files in the "/data/source/" folder and saves to outputFile
         // #  converting format if necessary.
-        // # $1 (srcDir): source files
+        // # $1 (inputDir): source files
         // # $2 (outputFile): merged output file
-      processAudio(tmpDir, 'mergeFiles', srcDir, outputFile)
+      processAudio(tmpDir, 'mergeFiles', inputDir, outputFile)
     ).then (
       fs.copy(tmpDir+outputFile, destFile)
     )
@@ -190,30 +190,30 @@ class AudioToolkit {
   }
 
   // normalize volume levels
-  normalizeLevels(srcFile, destfile, options) {
+  normalizeLevels(srcFile, destFile, options) {
     // TODO: implement some options
     if (!srcFile)
      throw "NormalizeLevels warning: srcFile is a required field"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpDir = tempy.directory()  + '/'
-    const tmpSrc = tmpDir + 'sourceAudio.'+ path.extname(srcFile)
-    const tmpDest = tmpDir + 'destAudio.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(fs.copy(destfile, tmpDest).then(
+    const inputFile = 'source.'+ path.extname(srcFile)
+    const outputFile = 'output.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpDir+inputFile).done(
     /**
-# Normalizes audio levels for a source audio file in the /data folder.
-#
-# Parameters:
-# $1 (sourceFileName) = The file name of the source audio, with extension.
-# $2 (destFileName) = The file name of the destination audio, with extension.
-#
-# Any additional parameters should be considered as options for the ffmpeg
-# normalization routine.
+      # Normalizes audio levels for a source audio file in the /data folder.
+      #
+      # Parameters:
+      # $1 (inputFile) = The file name of the source audio, with extension.
+      # $2 (outputFile) = The file name of the destination audio, with extension.
+      #
+      # Any additional parameters should be considered as options for the ffmpeg
+      # normalization routine.
      */
-      processAudio(tmpDir, 'normalizeLevels', fileName(tmpSrc), fileName(tmpDest)).done(
+      processAudio(tmpDir, 'normalizeLevels', inputFile, outputFile)
+    ).done(
         // copy output file to destFile and resolve to destFile
-        fs.copy(tmpDest, destFile).then( () => destFile )
-      )
-    ))
+        fs.copy(tmpDir+outputFile, destFile).done( () => destFile )
+    )
   }
 
 
