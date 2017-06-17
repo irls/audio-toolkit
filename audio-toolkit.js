@@ -29,7 +29,8 @@ class AudioToolkit {
     // copy files to tmp directory, process entire folder, resolve array of converted files
     return Promise.all([
       // create the subdirs
-      fs.ensureDir(tmpDir + inputDir), fs.ensureDir(tmpDir + outputDir)
+      fs.ensureDir(tmpDir + inputDir),
+      fs.ensureDir(tmpDir + outputDir)
     ]).then(Promise.all(
       srcFiles.map(src => fs.copy(src, tmpDir + inputDir + path.basename(src)) )
     )).then(
@@ -56,7 +57,7 @@ class AudioToolkit {
     const inputDir = 'input/'
     const outputFile = 'output.' + path.extname(destFile)
     return Promise.All(
-      srcFiles.map((src) => fs.copy(src, tmpDir))
+      srcFiles.map((src) => fs.copy(src, tmpDir + inputDir))
     ).then(
         // # Merges all files in the "/data/source/" folder and saves to outputFile
         // #  converting format if necessary.
@@ -79,7 +80,7 @@ class AudioToolkit {
     const inputFile = 'input.'+ path.extname(srcFile)
     const outputFile1 = 'output1.'+ path.extname(srcFile)
     const outputFile2 = 'output2.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).done(
+    return fs.copy(srcFile, tmpDir + inputFile).done(
       // Splits inputFile into two files: outputFile1 & outputFile2
       // $1 inputFile: The file name of the source audio, with extension.
       // $2 outputFile1: The filename for the audio before the split position.
