@@ -15,6 +15,7 @@ class AudioToolkit {
   }
 
   // resolves to an array of converted files
+  // implemented with docker script convertFormat.sh
   convertFormat(srcFiles, toFormat) {
     //console.log('convertFormat', srcFiles, toFormat)
     if (!srcFiles||!toFormat)
@@ -45,7 +46,8 @@ class AudioToolkit {
     )
   }
 
-  // joins files, resolves to destFile, make sure they are all the same format!!
+  // joins files, resolves to destFile
+  // implemented with docker script mergeFiles.sh
   mergeFiles(srcFiles, destFile) {
     if (!srcFile||!destFile)
       throw "MergeFiles warning: srcFile & destFile are required fields"
@@ -67,6 +69,7 @@ class AudioToolkit {
   }
 
   // splits audio and resolves to array of two dest files
+  // implemented with docker script splitFile.sh
   splitFile(srcFile, position, destPart1, destPart2) {
     if (!srcFile||!position||!toPos)
       throw "SplitFile warning: srcFile & position are required fields"
@@ -144,6 +147,7 @@ class AudioToolkit {
   }
 
   // returns obj with file size, audio length, format, bitrate etc.
+  // implemented with docker script getMetaData.sh
   getMetaData(srcFile) {
     if (!srcFile) throw "GetMetaData warning: srcFile is a required field"
     const tmpDir = tempy.directory()  + '/'
@@ -158,6 +162,7 @@ class AudioToolkit {
   }
 
   // normalize volume levels
+  // implemented with docker script normalizeLevels.sh
   // options not yet implemented
   normalizeLevels(srcFile, destFile, options) {
     // TODO: implement some options
@@ -181,6 +186,30 @@ class AudioToolkit {
     )
   }
 
+  // normalize silence length - remove excess inside and standardize edges
+  // implemented with docker script normalizeSilence.sh
+  // options not yet implemented
+  normalizeSilence(srcFile, destFile, options) {
+    // TODO: implement some options
+    if (!srcFile) throw "normalizeSilence warning: srcFile is a required field"
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    const tmpDir = tempy.directory()  + '/'
+    const inputFile = 'input.'+ path.extname(srcFile)
+    const outputFile = 'output.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpDir + inputFile).done(
+      // Normalizes silence
+      // $1 inputFile: The file name of the source audio, with extension.
+      // $2 outputFile: The file name of the destination audio, with extension.
+      // TODO: Any additional parameters should be considered as options for the ffmpeg
+      // normalization routine.
+      processAudio(tmpDir,'normalizeSilence', inputFile,outputFile)
+    ).done(
+      // copy output file to destFile and resolve to destFile
+      fs.copy(tmpDir+outputFile, destFile)
+    ).done(
+      () => destFile
+    )
+  }
 
 }
 
