@@ -6,6 +6,11 @@ const fs =     require('fs-extra')
 const globby = require('globby')
 const path   = require('path')
 
+const fileExists = require('file-exists')
+const directoryExists = require('directory-exists')
+
+
+
 class AudioToolkit {
   constructor() {
     // in case we need some instantiated object data
@@ -14,13 +19,13 @@ class AudioToolkit {
   // resolves to an array of converted files
   // implemented with docker script convertFormat.sh
   convertFormat(srcFiles, toFormat) {
-    //console.log('convertFormat', srcFiles, toFormat)
+    console.log('convertFormat', srcFiles, toFormat)
     if (!srcFiles||!toFormat)
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
     // TODO, check that all extensions in srcFiles match
     // TODO, check toFormat against a list of availble formats
     if (!toFormat) toFormat = 'flac' // default format
-    const tmpDir = tempy.Directory +'/'
+    const tmpDir = tempy.directory() +'/'
     const inputDir = 'input/'
     const outputDir = 'output/'
     // copy files to tmp directory, process entire folder, resolve array of converted files
@@ -37,8 +42,12 @@ class AudioToolkit {
       // $3 outputDir: Folder with converted files
       processAudio(tmpDir,'convertFormat', toFormat,inputDir,outputDir)
     ).then(
-      globby(outputDir+'*.'+toFormat).then(paths => {
-         //console.log('globby results in: '+destDir+'*.'+toFormat, paths)
+      globby(`${tmpDir}${outputDir}*.${toFormat}`).then(paths => {
+         console.log(`globby results in: ${outputDir}*.${toFormat}`, paths)
+        //  checkDir(tmpDir)
+        //  checkDir(tmpDir + inputDir)
+        //  checkDir(tmpDir + outputDir)
+
          return paths
       })
     )
@@ -217,18 +226,25 @@ module.exports = AudioToolkit
    Internal, not exported
 */
 
-function processAudio(sharedDir, taskName, ...args){
-  //console.log('processAudio', sharedDir, taskName)
+function checkDir(directory) {
+  if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
+   else console.log(` Directory "${directory}" not found`)
+}
+function checkFile(filename) {
+  if (fileExists.sync(filename)) console.log(` File "${filename}" found`)
+   else console.log(` File "${filename}" not found`)
+}
+
+function processAudio(sharedDir, scriptName, ...args){
+  console.log('processAudio', sharedDir, scriptName)
   return new Promise(function(resolve, reject) {
-    //return resolve(true);
     //  prepEnvironment().then( () => {
       args = args.join(' ')
       // IMPORTANT: this command will NOT work unless the docker image is built
       // and properly tagged as "dockerffmpeg". Should be done at npm install.
       // Use the following command: docker build -t dockerffmpeg .
-      let cmd = `'docker' run --rm -d -v ${sharedDir}:/data dockerffmpeg ${taskName}.sh ${args}`
+      let cmd = `'docker' run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
       console.log('Exec: '+ cmd)
-      //resolve(true)
       let docker = exec(cmd)
       docker.stdout.on('close', code =>  resolve($(code)) )
       docker.stdout.on('exit', code =>  resolve($(exit)) )
