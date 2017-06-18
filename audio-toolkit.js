@@ -1,6 +1,8 @@
 'use strict'
 
+const util = require('util');
 const exec =   require('child_process').exec
+ //const execP = util.promisify(exec);
 const tempy =  require('tempy')
 const fs =     require('fs-extra')
 const globby = require('globby')
@@ -73,20 +75,20 @@ class AudioToolkit {
     const inputFile = 'input.'+ path.extname(srcFile)
     const outputFile1 = 'output1.'+ path.extname(srcFile)
     const outputFile2 = 'output2.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpDir + inputFile).done(
+    return fs.copy(srcFile, tmpDir + inputFile).then(
       // Splits inputFile into two files: outputFile1 & outputFile2
       // $1 inputFile: The file name of the source audio, with extension.
       // $2 outputFile1: The filename for the audio before the split position.
       // $3 outputFile2: The filename for the audio after the split position.
       // $4 position: The position at which the source file should be split.
       processAudio(tmpDir,'splitFile', inputFile,outputFile1,outputFile2,position)
-    ).done(
+    ).then(
       // copy out output files to destFile and resolve to array of 2 destFiles
       Promise.all([
         fs.copy(tmpDir+outputFile1, destPart1),
         fs.copy(tmpDir+outputFile2, destPart2)
       ])
-    ).done(
+    ).then(
       // resolve to an array of two files
       () => [destPart1, destPart2]
     )
@@ -222,29 +224,60 @@ function checkFile(filename) {
    else console.log(` File "${filename}" not found`)
 }
 
+// function processAudioP(sharedDir, scriptName, ...args){
+//   console.log('processAudioP', sharedDir, scriptName)
+//   args = args.join(' ')
+//   let cmd = `'docker' run --rm -it -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
+//   console.log('Exec: '+ cmd)
+//   return execP(cmd)
+// }
+
+
 function processAudio(sharedDir, scriptName, ...args){
-  console.log('processAudio', sharedDir, scriptName)
+  //console.log('processAudio', sharedDir, scriptName)
   return new Promise(function(resolve, reject) {
     //  prepEnvironment().then( () => {
       args = args.join(' ')
       // IMPORTANT: this command will NOT work unless the docker image is built
       // and properly tagged as "dockerffmpeg". Should be done at npm install.
       // Use the following command: docker build -t dockerffmpeg .
-      let cmd = `'docker' run --rm -it -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
+      let cmd = `'docker' run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
+      cmd = `docker run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
       console.log('Exec: '+ cmd)
-      let docker = exec(cmd)
-      docker.stdout.on('close', code =>  resolve($(code)) )
-      docker.stdout.on('exit', code =>  resolve($(exit)) )
-      docker.stdout.on('error', err => reject(err) )
+      let options = {}
+      let docker = exec(cmd, options, function(error, stdout, stderr){
+        console.log('completed exec')
+        if (error) {
+          console.log(`exec error: ${error}`)
+          //reject(error)
+        }
+        else if (stdout) {
+          console.log(`exec stdout: ${stdout}`)
+          //resolve(stdout)
+        }
+        else if (stderr) {
+          console.log(`exec stderr: ${stderr}`)
+          //reject(stderr)
+        }
+      })
+      //docker.stdout.on('data', data =>  resolve($(code)) )
+      // docker.stdout.on('close', code =>  {
+      //   console.log('got here', code)
+      //   checkDir(sharedDir)
+      //   globby(sharedDir+'*.*').then((list)=> console.log(list) )
+      //   resolve($(code))
+      // })
+      // docker.stdout.on('exit', code =>  resolve($(exit)) )
+      // docker.stdout.on('error', err => reject(err) )
     //})
   })
 }
 
-function prepEnvironment() {
-  return new Promise(function(resolve, reject) {
-    let docker = exec('"eval $(docker-machine env default)"')
-    docker.stdout.on('close', code => resolve($(code)) )
-    docker.stdout.on('exit', code =>  resolve($(exit)) )
-    docker.stdout.on('error', err => reject(err) )
-  })
-}
+// function prepEnvironment() {
+//   return new Promise(function(resolve, reject) {
+//     let docker = exec('"eval $(docker-machine env default)"')
+//     docker.stdout.on('close', code => resolve($(code)) )
+//     docker.stdout.on('exit', code =>  resolve($(exit)) )
+//     docker.stdout.on('error', err => reject(err) )
+//   })
+// }
