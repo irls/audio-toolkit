@@ -1,13 +1,10 @@
 'use strict'
 
 const exec =   require('child_process').exec
-//const mv =     require('mv') // not using yet
 const tempy =  require('tempy')
 const fs =     require('fs-extra')
 const globby = require('globby')
 const path   = require('path')
-
-
 
 class AudioToolkit {
   constructor() {
@@ -216,14 +213,12 @@ class AudioToolkit {
 
 module.exports = AudioToolkit
 
-
 /*
    Internal, not exported
 */
 
-
-function processAudio(folderPath, taskName, ...args){
-  //console.log('processAudio', folderPath, taskName)
+function processAudio(sharedDir, taskName, ...args){
+  //console.log('processAudio', sharedDir, taskName)
   return new Promise(function(resolve, reject) {
     //return resolve(true);
     //  prepEnvironment().then( () => {
@@ -231,7 +226,7 @@ function processAudio(folderPath, taskName, ...args){
       // IMPORTANT: this command will NOT work unless the docker image is built
       // and properly tagged as "dockerffmpeg". Should be done at npm install.
       // Use the following command: docker build -t dockerffmpeg .
-      let cmd = `'docker' run --rm -d -v ${folderPath}:/data dockerffmpeg ${taskName}.sh ${args}`
+      let cmd = `'docker' run --rm -d -v ${sharedDir}:/data dockerffmpeg ${taskName}.sh ${args}`
       console.log('Exec: '+ cmd)
       //resolve(true)
       let docker = exec(cmd)
