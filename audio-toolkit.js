@@ -22,32 +22,19 @@ class AudioToolkit {
     console.log('convertFormat', srcFiles, toFormat)
     if (!srcFiles||!toFormat)
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
-    // TODO, check that all extensions in srcFiles match
-    // TODO, check toFormat against a list of availble formats
+    // TODO, check toFormat against a list of available formats
     if (!toFormat) toFormat = 'flac' // default format
     const tmpDir = tempy.directory() +'/'
-    const inputDir = 'input/'
-    const outputDir = 'output/'
     // copy files to tmp directory, process entire folder, resolve array of converted files
-    return Promise.all([
-      // create the subdirs
-      fs.ensureDir(tmpDir + inputDir),
-      fs.ensureDir(tmpDir + outputDir)
-    ]).then(Promise.all(
-      srcFiles.map(src => fs.copy(src, tmpDir + inputDir + path.basename(src)) )
-    )).then(
-      // Converts all files in the /data/source/ folder to a specified format.
-      // $1 toFormat: The destination format.
-      // $2 inputDir: Folder containing source files
-      // $3 outputDir: Folder with converted files
-      processAudio(tmpDir,'convertFormat', toFormat,inputDir,outputDir)
+    return Promise.all(
+      srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
     ).then(
-      globby(`${tmpDir}${outputDir}*.${toFormat}`).then(paths => {
-         console.log(`globby results in: ${outputDir}*.${toFormat}`, paths)
-        //  checkDir(tmpDir)
-        //  checkDir(tmpDir + inputDir)
-        //  checkDir(tmpDir + outputDir)
-
+      // Converts all files in the /data/ folder to a specified format.
+      // $1 toFormat: The destination format.
+      processAudio(tmpDir,'convertFormat', toFormat)
+    ).then(
+      globby(`${tmpDir}*.${toFormat}`).then(paths => {
+         console.log(`globby results in: ${tmpDir}*.${toFormat}`, paths)
          return paths
       })
     )
@@ -243,7 +230,7 @@ function processAudio(sharedDir, scriptName, ...args){
       // IMPORTANT: this command will NOT work unless the docker image is built
       // and properly tagged as "dockerffmpeg". Should be done at npm install.
       // Use the following command: docker build -t dockerffmpeg .
-      let cmd = `'docker' run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
+      let cmd = `'docker' run --rm -it -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
       console.log('Exec: '+ cmd)
       let docker = exec(cmd)
       docker.stdout.on('close', code =>  resolve($(code)) )
