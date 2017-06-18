@@ -1,11 +1,13 @@
 'use strict'
 
 const exec =   require('child_process').exec
-//const mv =     require('mv') // not using yet
 const tempy =  require('tempy')
 const fs =     require('fs-extra')
 const globby = require('globby')
 const path   = require('path')
+
+const fileExists = require('file-exists')
+const directoryExists = require('directory-exists')
 
 
 
@@ -15,20 +17,22 @@ class AudioToolkit {
   }
 
   // resolves to an array of converted files
+  // implemented with docker script convertFormat.sh
   convertFormat(srcFiles, toFormat) {
-    //console.log('convertFormat', srcFiles, toFormat)
+    console.log('convertFormat', srcFiles, toFormat)
     if (!srcFiles||!toFormat)
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
     // TODO, check that all extensions in srcFiles match
     // TODO, check toFormat against a list of availble formats
     if (!toFormat) toFormat = 'flac' // default format
-    const tmpDir = tempy.Directory +'/'
+    const tmpDir = tempy.directory() +'/'
     const inputDir = 'input/'
     const outputDir = 'output/'
     // copy files to tmp directory, process entire folder, resolve array of converted files
     return Promise.all([
       // create the subdirs
-      fs.ensureDir(tmpDir + inputDir), fs.ensureDir(tmpDir + outputDir)
+      fs.ensureDir(tmpDir + inputDir),
+      fs.ensureDir(tmpDir + outputDir)
     ]).then(Promise.all(
       srcFiles.map(src => fs.copy(src, tmpDir + inputDir + path.basename(src)) )
     )).then(
@@ -38,14 +42,19 @@ class AudioToolkit {
       // $3 outputDir: Folder with converted files
       processAudio(tmpDir,'convertFormat', toFormat,inputDir,outputDir)
     ).then(
-      globby(outputDir+'*.'+toFormat).then(paths => {
-         //console.log('globby results in: '+destDir+'*.'+toFormat, paths)
+      globby(`${tmpDir}${outputDir}*.${toFormat}`).then(paths => {
+         console.log(`globby results in: ${outputDir}*.${toFormat}`, paths)
+        //  checkDir(tmpDir)
+        //  checkDir(tmpDir + inputDir)
+        //  checkDir(tmpDir + outputDir)
+
          return paths
       })
     )
   }
 
-  // joins files, resolves to destFile, make sure they are all the same format!!
+  // joins files, resolves to destFile
+  // implemented with docker script mergeFiles.sh
   mergeFiles(srcFiles, destFile) {
     if (!srcFile||!destFile)
       throw "MergeFiles warning: srcFile & destFile are required fields"
@@ -54,7 +63,7 @@ class AudioToolkit {
     const inputDir = 'input/'
     const outputFile = 'output.' + path.extname(destFile)
     return Promise.All(
-      srcFiles.map((src) => fs.copy(src, tmpDir))
+      srcFiles.map((src) => fs.copy(src, tmpDir + inputDir))
     ).then(
         // # Merges all files in the "/data/source/" folder and saves to outputFile
         // #  converting format if necessary.
@@ -67,6 +76,7 @@ class AudioToolkit {
   }
 
   // splits audio and resolves to array of two dest files
+  // implemented with docker script splitFile.sh
   splitFile(srcFile, position, destPart1, destPart2) {
     if (!srcFile||!position||!toPos)
       throw "SplitFile warning: srcFile & position are required fields"
@@ -76,7 +86,7 @@ class AudioToolkit {
     const inputFile = 'input.'+ path.extname(srcFile)
     const outputFile1 = 'output1.'+ path.extname(srcFile)
     const outputFile2 = 'output2.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).done(
+    return fs.copy(srcFile, tmpDir + inputFile).done(
       // Splits inputFile into two files: outputFile1 & outputFile2
       // $1 inputFile: The file name of the source audio, with extension.
       // $2 outputFile1: The filename for the audio before the split position.
@@ -144,6 +154,7 @@ class AudioToolkit {
   }
 
   // returns obj with file size, audio length, format, bitrate etc.
+  // implemented with docker script getMetaData.sh
   getMetaData(srcFile) {
     if (!srcFile) throw "GetMetaData warning: srcFile is a required field"
     const tmpDir = tempy.directory()  + '/'
@@ -158,6 +169,7 @@ class AudioToolkit {
   }
 
   // normalize volume levels
+  // implemented with docker script normalizeLevels.sh
   // options not yet implemented
   normalizeLevels(srcFile, destFile, options) {
     // TODO: implement some options
@@ -181,29 +193,58 @@ class AudioToolkit {
     )
   }
 
+  // normalize silence length - remove excess inside and standardize edges
+  // implemented with docker script normalizeSilence.sh
+  // options not yet implemented
+  normalizeSilence(srcFile, destFile, options) {
+    // TODO: implement some options
+    if (!srcFile) throw "normalizeSilence warning: srcFile is a required field"
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    const tmpDir = tempy.directory()  + '/'
+    const inputFile = 'input.'+ path.extname(srcFile)
+    const outputFile = 'output.'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpDir + inputFile).done(
+      // Normalizes silence
+      // $1 inputFile: The file name of the source audio, with extension.
+      // $2 outputFile: The file name of the destination audio, with extension.
+      // TODO: Any additional parameters should be considered as options for the ffmpeg
+      // normalization routine.
+      processAudio(tmpDir,'normalizeSilence', inputFile,outputFile)
+    ).done(
+      // copy output file to destFile and resolve to destFile
+      fs.copy(tmpDir+outputFile, destFile)
+    ).done(
+      () => destFile
+    )
+  }
 
 }
 
 module.exports = AudioToolkit
 
-
 /*
    Internal, not exported
 */
 
+function checkDir(directory) {
+  if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
+   else console.log(` Directory "${directory}" not found`)
+}
+function checkFile(filename) {
+  if (fileExists.sync(filename)) console.log(` File "${filename}" found`)
+   else console.log(` File "${filename}" not found`)
+}
 
-function processAudio(folderPath, taskName, ...args){
-  //console.log('processAudio', folderPath, taskName)
+function processAudio(sharedDir, scriptName, ...args){
+  console.log('processAudio', sharedDir, scriptName)
   return new Promise(function(resolve, reject) {
-    //return resolve(true);
     //  prepEnvironment().then( () => {
       args = args.join(' ')
       // IMPORTANT: this command will NOT work unless the docker image is built
       // and properly tagged as "dockerffmpeg". Should be done at npm install.
       // Use the following command: docker build -t dockerffmpeg .
-      let cmd = `'docker' run --rm -d -v ${folderPath}:/data dockerffmpeg ${taskName}.sh ${args}`
+      let cmd = `'docker' run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
       console.log('Exec: '+ cmd)
-      //resolve(true)
       let docker = exec(cmd)
       docker.stdout.on('close', code =>  resolve($(code)) )
       docker.stdout.on('exit', code =>  resolve($(exit)) )

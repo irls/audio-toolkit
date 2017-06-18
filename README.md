@@ -29,13 +29,17 @@ a docker compose file the first time. This may introduce a slight delay
 but only once each time the server is restarted.
 
 ```javascript
+
 // resolves to an array of converted files
+// implemented with docker script convertFormat.sh
 convertFormat(srcFiles, toFormat)
 
 // joins files, resolves to destFile
+// implemented with docker script mergeFiles.sh
 mergeFiles(srcFiles, [destFile])
 
 // splits audio and resolves to array of two dest files
+// implemented with docker script splitFile.sh
 splitFile(srcFile, position, [destPart1], [destPart2])
 
 // insert one file into another, resolves to destFile
@@ -51,13 +55,17 @@ deleteSection(srcFile, fromPos, toPos, [destFile])
 replaceSection(srcFile, fragmentFile, fromPos, toPos, [destFile])
 
 // returns obj with file size, audio length, format, bitrate etc.
+// implemented with docker script getMetaData.sh
 getMetaData(srcFile)
 
 // normalize volume levels
+// implemented with docker script normalizeLevels.sh
 // options not yet implemented
 normalizeLevels(srcFile, [destfile], [options])
 
-// reduces excess silence between words and at either end of audio file
-normalizeSilence(srcFile, [destfile])
+// normalize silence length - remove excess inside and standardize edges
+// implemented with docker script normalizeSilence.sh
+// options not yet implemented
+normalizeSilence(srcFile, [destFile], [options])
 
 ```

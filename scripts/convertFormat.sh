@@ -6,6 +6,8 @@
 # // $3 outputDir: subfolder with converted files, should be "output/"
 
 # for all files in inputDir
+echo 'convertFormat.sh, $1, $2'
+
 for i in /data/$2*.*;
   # get the src file name
   do name=`echo $i | cut -d'.' -f1`;
