@@ -1,7 +1,7 @@
 'use strict'
 
-const util = require('util');
-const exec =   require('child_process').exec
+const util = require('util')
+const { exec } = require('child_process')
  //const execP = util.promisify(exec);
 const tempy =  require('tempy')
 const fs =     require('fs-extra')
@@ -21,7 +21,7 @@ class AudioToolkit {
   // resolves to an array of converted files
   // implemented with docker script convertFormat.sh
   convertFormat(srcFiles, toFormat) {
-    console.log('convertFormat', srcFiles, toFormat)
+    //console.log('convertFormat', srcFiles, toFormat)
     if (!srcFiles||!toFormat)
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
     // TODO, check toFormat against a list of available formats
@@ -33,12 +33,12 @@ class AudioToolkit {
     ).then(
       // Converts all files in the /data/ folder to a specified format.
       // $1 toFormat: The destination format.
-      processAudio(tmpDir,'convertFormat', toFormat)
-    ).then(
-      globby(`${tmpDir}*.${toFormat}`).then(paths => {
-         console.log(`globby results in: ${tmpDir}*.${toFormat}`, paths)
-         return paths
-      })
+      processAudio(tmpDir,'convertFormat', toFormat).then(
+        globby(`${tmpDir}*.${toFormat}`).done(paths => {
+           console.log(`globby results in: ${tmpDir}*.${toFormat}`, paths)
+           return paths
+        })
+      )
     )
   }
 
@@ -242,34 +242,33 @@ function processAudio(sharedDir, scriptName, ...args){
       // and properly tagged as "dockerffmpeg". Should be done at npm install.
       // Use the following command: docker build -t dockerffmpeg .
       let cmd = `'docker' run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
+
+
+      // this one works just fine
+      cmd = 'touch testfile.txt'
+      console.log('Exec: '+ cmd)
+      exec(cmd, (error, stdout, stderr) => {
+        console.log('test callback')
+        if (error) {
+          console.error(`exec error: ${error}`);
+        }
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
+      })
+
+      // this one does nothing
       cmd = `docker run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
       console.log('Exec: '+ cmd)
-      let options = {}
-      let docker = exec(cmd, options, function(error, stdout, stderr){
-        console.log('completed exec')
+      exec(cmd, (error, stdout, stderr) => {
+        console.log('this callback never fires')
         if (error) {
-          console.log(`exec error: ${error}`)
-          //reject(error)
+          console.error(`exec error: ${error}`);
+          return reject(error)
         }
-        else if (stdout) {
-          console.log(`exec stdout: ${stdout}`)
-          //resolve(stdout)
-        }
-        else if (stderr) {
-          console.log(`exec stderr: ${stderr}`)
-          //reject(stderr)
-        }
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
+        return resolve(stdout)
       })
-      //docker.stdout.on('data', data =>  resolve($(code)) )
-      // docker.stdout.on('close', code =>  {
-      //   console.log('got here', code)
-      //   checkDir(sharedDir)
-      //   globby(sharedDir+'*.*').then((list)=> console.log(list) )
-      //   resolve($(code))
-      // })
-      // docker.stdout.on('exit', code =>  resolve($(exit)) )
-      // docker.stdout.on('error', err => reject(err) )
-    //})
   })
 }
 
