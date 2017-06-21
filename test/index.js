@@ -18,8 +18,9 @@ function compareFiles(file1, file2) {
 
 
 describe("Audio Toolkit tests", function() {
-
+  this.timeout(15000)
   it("Let me convert a file from .mp3 to .flac", function() {
+
     let srcFile = TESTFILES + "1-test-convert-from.mp3"
     let compareFile = TESTFILES + "1-test-convert-to.flac"
     let testCompare = aud.convertFormat([ srcFile ], 'flac').then((outputFiles) => {

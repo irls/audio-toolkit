@@ -11,6 +11,8 @@ const path   = require('path')
 const fileExists = require('file-exists')
 const directoryExists = require('directory-exists')
 
+const chokidar = require('chokidar')
+
 
 
 class AudioToolkit {
@@ -21,25 +23,23 @@ class AudioToolkit {
   // resolves to an array of converted files
   // implemented with docker script convertFormat.sh
   convertFormat(srcFiles, toFormat) {
-    //console.log('convertFormat', srcFiles, toFormat)
-    if (!srcFiles||!toFormat)
+    console.log('convertFormat', srcFiles, toFormat)
+    if (!srcFiles || !toFormat)
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
-    // TODO, check toFormat against a list of available formats
     if (!toFormat) toFormat = 'flac' // default format
-    const tmpDir = tempy.directory() +'/'
+    const tmpDir = tempy.directory() + '/'
     // copy files to tmp directory, process entire folder, resolve array of converted files
     return Promise.all(
       srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
     ).then(
-      // Converts all files in the /data/ folder to a specified format.
-      // $1 toFormat: The destination format.
-      processAudio(tmpDir,'convertFormat', toFormat).then(
-        globby(`${tmpDir}*.${toFormat}`).done(paths => {
-           console.log(`globby results in: ${tmpDir}*.${toFormat}`, paths)
-           return paths
-        })
-      )
-    )
+      processAudio(tmpDir,'convertFormat', toFormat)
+    ).then(
+      // why is this firing even without 'resolve'?
+      globby(`${tmpDir}*.${toFormat}`).then(paths => {
+         console.log(`globby results in: ${tmpDir}*.${toFormat}`, paths)
+         return paths
+      })
+    ).catch((err) => console.error(err))
   }
 
   // joins files, resolves to destFile
@@ -224,51 +224,27 @@ function checkFile(filename) {
    else console.log(` File "${filename}" not found`)
 }
 
-// function processAudioP(sharedDir, scriptName, ...args){
-//   console.log('processAudioP', sharedDir, scriptName)
-//   args = args.join(' ')
-//   let cmd = `'docker' run --rm -it -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
-//   console.log('Exec: '+ cmd)
-//   return execP(cmd)
-// }
-
 
 function processAudio(sharedDir, scriptName, ...args){
-  //console.log('processAudio', sharedDir, scriptName)
-  return new Promise(function(resolve, reject) {
-    //  prepEnvironment().then( () => {
-      args = args.join(' ')
-      // IMPORTANT: this command will NOT work unless the docker image is built
-      // and properly tagged as "dockerffmpeg". Should be done at npm install.
-      // Use the following command: docker build -t dockerffmpeg .
-      let cmd = `'docker' run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
+  return new Promise((resolve, reject) => {
+    //let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
+    //console.log('Exec: '+ cmd)
+    // A hack to resolve when the script is done
+    // chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {
+    //   console.log('marker file found')
+    //   resolve(true)
+    // })
+    // call the docker script
+    //  exec(cmd, (error, stdout, stderr) => { // never fires
+    //     if (error) return reject(error)
+    //     resolve(stdout)
+    //  })
 
-
-      // this one works just fine
-      cmd = 'touch testfile.txt'
-      console.log('Exec: '+ cmd)
-      exec(cmd, (error, stdout, stderr) => {
-        console.log('test callback')
-        if (error) {
-          console.error(`exec error: ${error}`);
-        }
-        console.log(`stdout: ${stdout}`);
-        console.log(`stderr: ${stderr}`);
-      })
-
-      // this one does nothing
-      cmd = `docker run --rm -d -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args}`
-      console.log('Exec: '+ cmd)
-      exec(cmd, (error, stdout, stderr) => {
-        console.log('this callback never fires')
-        if (error) {
-          console.error(`exec error: ${error}`);
-          return reject(error)
-        }
-        console.log(`stdout: ${stdout}`);
-        console.log(`stderr: ${stderr}`);
-        return resolve(stdout)
-      })
+    // faked resolve
+    setTimeout(() => {
+      console.log('resolver')
+      resolve("Success!")
+    }, 10)
   })
 }
 
