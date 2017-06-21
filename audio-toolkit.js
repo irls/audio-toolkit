@@ -28,18 +28,19 @@ class AudioToolkit {
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
     if (!toFormat) toFormat = 'flac' // default format
     const tmpDir = tempy.directory() + '/'
-    // copy files to tmp directory, process entire folder, resolve array of converted files
-    return Promise.all(
-      srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
-    ).then(
-      processAudio(tmpDir,'convertFormat', toFormat)
-    ).then(
-      // why is this firing even without 'resolve'?
-      globby(`${tmpDir}*.${toFormat}`).then(paths => {
-        console.log(`Step 3: globby results in: ${tmpDir}*.${toFormat}`, paths)
+    let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
+    let processTask = () => processAudio(tmpDir,'convertFormat', toFormat)
+    let collectTask = () => globby(`${tmpDir}*.${toFormat}`).then(paths => {
+     console.log(`Step 4: globby results in: ${tmpDir}*.${toFormat}`, paths)
+     return paths
+    })
+    return Promise.all( fileCopyTasks )
+      .then( processTask )
+      .then( collectTask )
+      .then( (paths) => {
+        console.log('Step 5: complete', paths.length)
         return paths
       })
-    ).catch((err) => console.error(err))
   }
 
   // joins files, resolves to destFile
@@ -228,25 +229,21 @@ function checkFile(filename) {
 function processAudio(sharedDir, scriptName, ...args){
   return new Promise((resolve, reject) => {
     console.log('Step 1: call processAudio')
+    let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
+    console.log('Exec: '+ cmd)
 
-    //let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
-    //console.log('Exec: '+ cmd)
     // A hack to resolve when the script is done
-    // chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {
-    //   console.log('marker file found')
-    //   resolve(true)
-    // })
-    // call the docker script
-    //  exec(cmd, (error, stdout, stderr) => { // never fires
-    //     if (error) return reject(error)
-    //     resolve(stdout)
-    //  })
+    chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {
+      console.log('Step 3: file resolver -- marker file found')
+      return resolve(true)
+    })
 
-    // faked resolve
-    setTimeout(() => {
-      console.log('Step 2: resolver')
-      return resolve("Success!")
-    }, 10)
+    //call the docker script
+    exec(cmd, (error, stdout, stderr) => { // never fires
+      console.log('Step 2: docker completed')
+      //if (error) return reject(error)
+      //return resolve(stdout)
+    })
   })
 }
 
