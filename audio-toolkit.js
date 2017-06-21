@@ -23,7 +23,7 @@ class AudioToolkit {
   // resolves to an array of converted files
   // implemented with docker script convertFormat.sh
   convertFormat(srcFiles, toFormat) {
-    console.log('convertFormat', srcFiles, toFormat)
+    // console.log('convertFormat', srcFiles, toFormat)
     if (!srcFiles || !toFormat)
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
     if (!toFormat) toFormat = 'flac' // default format
@@ -36,8 +36,8 @@ class AudioToolkit {
     ).then(
       // why is this firing even without 'resolve'?
       globby(`${tmpDir}*.${toFormat}`).then(paths => {
-         console.log(`globby results in: ${tmpDir}*.${toFormat}`, paths)
-         return paths
+        console.log(`Step 3: globby results in: ${tmpDir}*.${toFormat}`, paths)
+        return paths
       })
     ).catch((err) => console.error(err))
   }
@@ -227,6 +227,8 @@ function checkFile(filename) {
 
 function processAudio(sharedDir, scriptName, ...args){
   return new Promise((resolve, reject) => {
+    console.log('Step 1: call processAudio')
+
     //let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
     //console.log('Exec: '+ cmd)
     // A hack to resolve when the script is done
@@ -242,8 +244,8 @@ function processAudio(sharedDir, scriptName, ...args){
 
     // faked resolve
     setTimeout(() => {
-      console.log('resolver')
-      resolve("Success!")
+      console.log('Step 2: resolver')
+      return resolve("Success!")
     }, 10)
   })
 }
