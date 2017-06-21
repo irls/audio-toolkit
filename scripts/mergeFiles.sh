@@ -6,3 +6,7 @@
 # $2 (outputFile): merged output file
 
 ffmpeg -f concat -safe 0 -i <(for f in /data/$1*.*; do echo "file '$f'"; done) -c copy /data/$2
+
+
+# mark this task complete
+touch "/data/taskcomplete.marker"

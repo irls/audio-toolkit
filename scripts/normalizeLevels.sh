@@ -8,3 +8,8 @@
 #
 # TODO: Any additional parameters should be considered as options for the ffmpeg
 # normalization routine.
+
+
+
+# mark this task complete
+touch "/data/taskcomplete.marker"

@@ -46,23 +46,33 @@ class AudioToolkit {
   // joins files, resolves to destFile
   // implemented with docker script mergeFiles.sh
   mergeFiles(srcFiles, destFile) {
-    if (!srcFile||!destFile)
-      throw "MergeFiles warning: srcFile & destFile are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
+    console.log('mergefiles: ', srcFiles, destFile)
+    if (!srcFiles) throw "MergeFiles warning: srcFile is a required field"
+    let ext = path.extname(srcFiles[0]).split('.')[1]
+    console.log('ext: ', ext) //
+    if (!destFile) destFile = tempy.file({ extension: ext })
+    console.log('srcfiles[0], destFile, ext: ', srcFiles[0], destFile, ext)
     const tmpDir = tempy.directory()  + '/'
     const inputDir = 'input/'
-    const outputFile = 'output.' + path.extname(destFile)
-    return Promise.All(
-      srcFiles.map((src) => fs.copy(src, tmpDir + inputDir))
-    ).then(
-        // # Merges all files in the "/data/source/" folder and saves to outputFile
-        // #  converting format if necessary.
-        // # $1 (inputDir): source files
-        // # $2 (outputFile): merged output file
-      processAudio(tmpDir,'mergeFiles', inputDir,outputFile)
-    ).then (
-      fs.copy(tmpDir+outputFile, destFile)
-    )
+    const outputFile = 'output.' + ext
+    let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
+    let processTask = () => processAudio(tmpDir,'mergeFiles', inputDir, outputFile)
+    let copyTask = () => {
+      return fs.copy(tmpDir + outputFile, destFile).done( () => {
+        // console.log('copied: ', tmpDir + outputFile)
+        checkFile(destFile)
+      })
+    }
+    console.log('tmpDir, inputDir, outputFile: ', tmpDir, inputDir, outputFile)
+    return Promise.all( fileCopyTasks )
+      .then( processTask )
+      .then( copyTask )
+      .then( () => {
+        checkFile(tmpDir + outputFile)
+        checkFile(destFile)
+        console.log('Step 4: complete', destFile)
+        destFile
+      })
   }
 
   // splits audio and resolves to array of two dest files
