@@ -230,7 +230,7 @@ function processAudio(sharedDir, scriptName, ...args){
   return new Promise((resolve, reject) => {
     console.log('Step 1: call processAudio')
     let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
-    console.log('Exec: '+ cmd)
+    // console.log('Exec: '+ cmd)
 
     // A hack to resolve when the script is done
     chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {
@@ -240,9 +240,9 @@ function processAudio(sharedDir, scriptName, ...args){
 
     //call the docker script
     exec(cmd, (error, stdout, stderr) => { // never fires
-      console.log('Step 2: docker completed')
-      //if (error) return reject(error)
-      //return resolve(stdout)
+      console.log('Step 2: docker completed, this is not being called')
+      if (error) return reject(error)
+      return resolve(stdout)
     })
   })
 }
