@@ -12,3 +12,7 @@ for i in /data/*.*; do
   # convert format and add new file extension
   ffmpeg -i "$i" "$FILE.$1";
 done
+
+
+# mark this task complete
+touch "/data/taskcomplete.marker"

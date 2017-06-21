@@ -11,6 +11,7 @@
     "postinstall": "docker build -t dockerffmpeg ."
   },
   "dependencies": {
+    "chokidar": "^1.7.0",
     "directory-exists": "^1.0.2",
     "file-exists": "^4.0.0",
     "fs-extra": "^3.0.1",
