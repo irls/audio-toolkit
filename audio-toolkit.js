@@ -24,11 +24,10 @@ class AudioToolkit {
   // implemented with docker script convertFormat.sh
   convertFormat(srcFiles, toFormat) {
     console.log('convertFormat', srcFiles, toFormat)
-    if (!srcFiles||!toFormat)
+    if (!srcFiles || !toFormat)
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
-    // TODO, check toFormat against a list of available formats
     if (!toFormat) toFormat = 'flac' // default format
-    const tmpDir = tempy.directory() +'/'
+    const tmpDir = tempy.directory() + '/'
     // copy files to tmp directory, process entire folder, resolve array of converted files
     return Promise.all(
       srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
@@ -245,7 +244,7 @@ function processAudio(sharedDir, scriptName, ...args){
     setTimeout(() => {
       console.log('resolver')
       resolve("Success!")
-    }, 10);
+    }, 10)
   })
 }
 
