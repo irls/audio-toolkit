@@ -31,14 +31,14 @@ class AudioToolkit {
     let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
     let processTask = () => processAudio(tmpDir,'convertFormat', toFormat)
     let collectTask = () => globby(`${tmpDir}*.${toFormat}`).then(paths => {
-     console.log(`Step 4: globby results in: ${tmpDir}*.${toFormat}`, paths)
+     //console.log(`Step 4: globby results in: ${tmpDir}*.${toFormat}`, paths)
      return paths
     })
     return Promise.all( fileCopyTasks )
       .then( processTask )
       .then( collectTask )
       .then( (paths) => {
-        console.log('Step 5: complete', paths.length)
+        //console.log('Step 5: complete', paths.length)
         return paths
       })
   }
@@ -46,33 +46,28 @@ class AudioToolkit {
   // joins files, resolves to destFile
   // implemented with docker script mergeFiles.sh
   mergeFiles(srcFiles, destFile) {
-    console.log('mergefiles: ', srcFiles, destFile)
+    //console.log('mergefiles: ', srcFiles, destFile)
     if (!srcFiles) throw "MergeFiles warning: srcFile is a required field"
     let ext = path.extname(srcFiles[0]).split('.')[1]
-    console.log('ext: ', ext) //
+    ////console.log('ext: ', ext) //
     if (!destFile) destFile = tempy.file({ extension: ext })
-    console.log('srcfiles[0], destFile, ext: ', srcFiles[0], destFile, ext)
+    //console.log('srcfiles[0], destFile, ext: ', srcFiles[0], destFile, ext)
     const tmpDir = tempy.directory()  + '/'
     const inputDir = 'input/'
     const outputFile = 'output.' + ext
-    let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
+    let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + inputDir + path.basename(src)) )
     let processTask = () => processAudio(tmpDir,'mergeFiles', inputDir, outputFile)
     let copyTask = () => {
-      return fs.copy(tmpDir + outputFile, destFile).done( () => {
+      return fs.copy(tmpDir + outputFile, destFile).then( () => {
         // console.log('copied: ', tmpDir + outputFile)
         checkFile(destFile)
       })
     }
-    console.log('tmpDir, inputDir, outputFile: ', tmpDir, inputDir, outputFile)
+    //console.log('tmpDir, inputDir, outputFile: ', tmpDir, inputDir, outputFile)
     return Promise.all( fileCopyTasks )
       .then( processTask )
       .then( copyTask )
-      .then( () => {
-        checkFile(tmpDir + outputFile)
-        checkFile(destFile)
-        console.log('Step 4: complete', destFile)
-        destFile
-      })
+      .then( () =>  destFile )
   }
 
   // splits audio and resolves to array of two dest files
@@ -240,7 +235,7 @@ function processAudio(sharedDir, scriptName, ...args){
   return new Promise((resolve, reject) => {
     console.log('Step 1: call processAudio')
     let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
-    // console.log('Exec: '+ cmd)
+     console.log('Exec: '+ cmd)
 
     // A hack to resolve when the script is done
     chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {

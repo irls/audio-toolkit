@@ -20,14 +20,14 @@ function compareFiles(file1, file2) {
 describe("Audio Toolkit tests", function() {
   this.timeout(15000)
 
-  // it("Let me convert a file from .mp3 to .flac", function() {
-  //   let srcFiles = [ TESTFILES + "1-test-convert-from.mp3" ]
-  //   let compareFile = TESTFILES + "1-test-convert-to.flac"
-  //   let testCompare = aud.convertFormat(srcFiles, 'flac').then((outputFiles) => {
-  //     return compareFiles(outputFiles[0], compareFile)
-  //   })
-  //   return chai.expect(testCompare).to.eventually.equal(true)
-  // })
+  it("Let me convert a file from .mp3 to .flac", function() {
+    let srcFiles = [ TESTFILES + "1-test-convert-from.mp3" ]
+    let compareFile = TESTFILES + "1-test-convert-to.flac"
+    let testCompare = aud.convertFormat(srcFiles, 'flac').then((outputFiles) => {
+      return compareFiles(outputFiles[0], compareFile)
+    })
+    return chai.expect(testCompare).to.eventually.equal(true)
+  })
 
   it("Let me merge some files together ", function() {
     let srcFiles = [ TESTFILES + "2-test-merge-from-1.flac",  TESTFILES + "2-test-merge-from-2.flac" ]
