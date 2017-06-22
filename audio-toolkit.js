@@ -75,29 +75,20 @@ class AudioToolkit {
   splitFile(srcFile, position, destPart1, destPart2) {
     if (!srcFile||!position||!toPos)
       throw "SplitFile warning: srcFile & position are required fields"
-    if (!destPart1) destPart1 = tempy.file({extension: path.extname(srcFile)})
-    if (!destPart2) destPart2 = tempy.file({extension: path.extname(srcFile)})
+    let ext = path.extname(srcFile).split('.')[1]
+    if (!destPart1) destPart1 = tempy.file({extension: ext})
+    if (!destPart2) destPart2 = tempy.file({extension: ext})
     const tmpDir = tempy.directory()  + '/'
-    const inputFile = 'input.'+ path.extname(srcFile)
-    const outputFile1 = 'output1.'+ path.extname(srcFile)
-    const outputFile2 = 'output2.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpDir + inputFile).then(
-      // Splits inputFile into two files: outputFile1 & outputFile2
-      // $1 inputFile: The file name of the source audio, with extension.
-      // $2 outputFile1: The filename for the audio before the split position.
-      // $3 outputFile2: The filename for the audio after the split position.
-      // $4 position: The position at which the source file should be split.
-      processAudio(tmpDir,'splitFile', inputFile,outputFile1,outputFile2,position)
-    ).then(
-      // copy out output files to destFile and resolve to array of 2 destFiles
-      Promise.all([
-        fs.copy(tmpDir+outputFile1, destPart1),
-        fs.copy(tmpDir+outputFile2, destPart2)
-      ])
-    ).then(
-      // resolve to an array of two files
-      () => [destPart1, destPart2]
-    )
+    const inputFile = 'input.'+ ext
+    const outputFile1 = 'output1.'+ ext
+    const outputFile2 = 'output2.'+ ext
+    const processAudio = () => processAudio(tmpDir,'splitFile', inputFile, outputFile1, outputFile2, position)
+    // copy out output files to destFile and resolve to array of 2 destFiles
+    const copyFiles = Promise.all()[fs.copy(tmpDir+outputFile1, destPart1), fs.copy(tmpDir+outputFile2, destPart2)])
+    return fs.copy(srcFile, tmpDir + inputFile)
+      .then(processAudio)
+      .then(copyFiles)
+      .then( () => [destPart1, destPart2] )
   }
 
   // insert one file into another, resolves to destFile

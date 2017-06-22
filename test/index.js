@@ -38,7 +38,15 @@ describe("Audio Toolkit tests", function() {
     return chai.expect(testCompare).to.eventually.equal(true)
   })
 
-
+  it("Let me split a file ", function() {
+    let srcFile = TESTFILES + "3-test-split-from.flac"
+    let compareFiles = [TESTFILES + "3-test-split-to1.mp3", TESTFILES + "3-test-split-to2.mp3"]
+    let testCompare = aud.splitFile(srcFile).then((outputFiles) => {
+      return compareFiles(outputFile[0], compareFile[0])
+        .then(compareFiles(outputFile[1], compareFile[1]))
+    })
+    return chai.expect(testCompare).to.eventually.equal(true)
+  })
 
 
 })
