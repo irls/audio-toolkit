@@ -20,30 +20,30 @@ function compareFiles(file1, file2) {
 describe("Audio Toolkit tests", function() {
   this.timeout(15000)
 
-  it("Let me convert a file from .mp3 to .flac", function() {
-    let srcFiles = [ TESTFILES + "1-test-convert-from.mp3" ]
-    let compareFile = TESTFILES + "1-test-convert-to.flac"
-    let testCompare = aud.convertFormat(srcFiles, 'flac').then((outputFiles) => {
-      return compareFiles(outputFiles[0], compareFile)
-    })
-    return chai.expect(testCompare).to.eventually.equal(true)
-  })
-
-  it("Let me merge some files together ", function() {
-    let srcFiles = [ TESTFILES + "2-test-merge-from-1.flac",  TESTFILES + "2-test-merge-from-2.flac" ]
-    let compareFile = TESTFILES + "2-test-merge-to.flac"
-    let testCompare = aud.mergeFiles(srcFiles).then((outputFile) => {
-      return compareFiles(outputFile, compareFile)
-    })
-    return chai.expect(testCompare).to.eventually.equal(true)
-  })
+  // it("Let me convert a file from .mp3 to .flac", function() {
+  //   let srcFiles = [ TESTFILES + "1-test-convert-from.mp3" ]
+  //   let compareFile = TESTFILES + "1-test-convert-to.flac"
+  //   let testCompare = aud.convertFormat(srcFiles, 'flac').then((outputFiles) => {
+  //     return compareFiles(outputFiles[0], compareFile)
+  //   })
+  //   return chai.expect(testCompare).to.eventually.equal(true)
+  // })
+  //
+  // it("Let me merge some files together ", function() {
+  //   let srcFiles = [ TESTFILES + "2-test-merge-from-1.flac",  TESTFILES + "2-test-merge-from-2.flac" ]
+  //   let compareFile = TESTFILES + "2-test-merge-to.flac"
+  //   let testCompare = aud.mergeFiles(srcFiles).then((outputFile) => {
+  //     return compareFiles(outputFile, compareFile)
+  //   })
+  //   return chai.expect(testCompare).to.eventually.equal(true)
+  // })
 
   it("Let me split a file ", function() {
     let srcFile = TESTFILES + "3-test-split-from.flac"
-    let compareFiles = [TESTFILES + "3-test-split-to1.mp3", TESTFILES + "3-test-split-to2.mp3"]
-    let testCompare = aud.splitFile(srcFile).then((outputFiles) => {
-      return compareFiles(outputFile[0], compareFile[0])
-        .then(compareFiles(outputFile[1], compareFile[1]))
+    let compareWith = [TESTFILES + "3-test-split-to1.flac", TESTFILES + "3-test-split-to2.flac"]
+    let testCompare = aud.splitFile(srcFile, 500).then((outputFiles) => {
+      return compareFiles(outputFiles[0], compareWith[0])
+        .then(compareFiles(outputFiles[1], compareWith[1]))
     })
     return chai.expect(testCompare).to.eventually.equal(true)
   })
