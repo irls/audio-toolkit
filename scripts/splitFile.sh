@@ -7,3 +7,8 @@
 # $2 outputFile1: The filename for the audio before the split position.
 # $3 outputFile2: The filename for the audio after the split position.
 # $4 position: The position at which the source file should be split.
+
+
+
+# mark this task complete
+touch "/data/taskcomplete.marker"
