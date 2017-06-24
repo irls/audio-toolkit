@@ -47,6 +47,18 @@ describe("Audio Toolkit tests", function() {
     return chai.expect(testCompare).to.eventually.equal(true)
   })
 
+  it("Let me insert a fragment into another file ", function() {
+    let srcFile = TESTFILES + "4-test-insert-from.flac"
+    let fragmentFile = TESTFILES + "4-test-insert-fromfrag.flac"
+    let compareWith = TESTFILES + "4-test-insert-to.flac"
+    // insertFragment(srcFile, fragmentFile, position, destFile)
+    let testCompare = aud.insertFragment(srcFile, fragmentFile, 5000).then((outputFile) => {
+      return compareFiles(outputFile, compareWith)
+    })
+    return chai.expect(testCompare).to.eventually.equal(true)
+  })
+
+
 
 })
 

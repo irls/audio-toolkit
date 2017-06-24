@@ -88,12 +88,12 @@ class AudioToolkit {
   // insert one file into another, resolves to destFile
   // implemented as split + merge
   insertFragment(srcFile, fragmentFile, position, destFile) {
+    var aud = this
     if (!srcFile||!fragmentFile||!position)
      throw "InsertFragment warning: srcFile, fragmentFile and position are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
-    const tmpDir = tempy.directory()  + '/'
-    return splitFile(srcFile, position).done((files) => {
-      return mergeFile([files[0], fragementFile, files[1]], destFile)
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
+    return aud.splitFile(srcFile, position).then((files) => {
+      return aud.mergeFiles([files[0], fragmentFile, files[1]], destFile)
     })
   }
 
