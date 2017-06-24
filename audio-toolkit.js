@@ -43,7 +43,7 @@ class AudioToolkit {
   // joins files, resolves to destFile
   // implemented with docker script mergeFiles.sh
   mergeFiles(srcFiles, destFile) {
-    //console.log('mergefiles: ', srcFiles, destFile)
+    console.log('mergefiles: ', srcFiles, destFile)
     if (!srcFiles) throw "MergeFiles warning: srcFile is a required field"
     let ext = path.extname(srcFiles[0]).split('.')[1]
     ////console.log('ext: ', ext) //
@@ -100,19 +100,18 @@ class AudioToolkit {
   // deletes section, resolves to destFile
   // implemented as split + split + merge
   deleteSection(srcFile, fromPos, toPos, destFile) {
+    var aud = this
     if (!srcFile||!fromPos||!toPos)
      throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
-    const tmpDir = tempy.directory()  + '/'
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
     var partA, partB
-    return splitFile(srcFile, toPos).done((files) => {
+    return aud.splitFile(srcFile, toPos).then((files) => {
       partB = files[1]
-      return splitFile(files[0], fromPos).done((files) => {
+      return aud.splitFile(files[0], fromPos).then((files) => {
         partA = files[0]
       })
-    }).done(
-      mergeFile([partA, partB], destFile)
-    )
+    })
+    .then(()=>aud.mergeFiles([partA, partB], destFile))
   }
 
   // deletes section, resolves to destFile
@@ -120,17 +119,15 @@ class AudioToolkit {
   replaceSection(srcFile, fragmentFile, fromPos, toPos, destFile) {
     if (!srcFile||!fragmentFile||!fromPos||!toPos)
      throw "ReplaceSection warning: srcFile, fragmentFile, fromPos and toPos are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
-    const tmpDir = tempy.directory()  + '/'
+    var aud = this
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
     var partA, partB
-    return splitFile(srcFile, toPos).done((files) => {
+    return splitFile(srcFile, toPos).then((files) => {
       partB = files[1]
-      return splitFile(files[0], fromPos).done((files) => {
+      return splitFile(files[0], fromPos).then((files) => {
         partA = files[0]
       })
-    }).done(
-      mergeFile([partA, fragmentFile, partB], destFile)
-    )
+    }).then( () => mergeFile([partA, fragmentFile, partB], destFile) )
   }
 
   // returns obj with file size, audio length, format, bitrate etc.
