@@ -43,7 +43,7 @@ class AudioToolkit {
   // joins files, resolves to destFile
   // implemented with docker script mergeFiles.sh
   mergeFiles(srcFiles, destFile) {
-    console.log('mergefiles: ', srcFiles, destFile)
+    //console.log('mergefiles: ', srcFiles, destFile)
     if (!srcFiles) throw "MergeFiles warning: srcFile is a required field"
     let ext = path.extname(srcFiles[0]).split('.')[1]
     ////console.log('ext: ', ext) //
@@ -122,12 +122,12 @@ class AudioToolkit {
     var aud = this
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
     var partA, partB
-    return splitFile(srcFile, toPos).then((files) => {
+    return aud.splitFile(srcFile, toPos).then((files) => {
       partB = files[1]
-      return splitFile(files[0], fromPos).then((files) => {
+      return aud.splitFile(files[0], fromPos).then((files) => {
         partA = files[0]
       })
-    }).then( () => mergeFile([partA, fragmentFile, partB], destFile) )
+    }).then( () => aud.mergeFiles([partA, fragmentFile, partB], destFile) )
   }
 
   // returns obj with file size, audio length, format, bitrate etc.
