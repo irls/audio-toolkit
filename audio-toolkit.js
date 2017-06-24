@@ -2,15 +2,12 @@
 
 const util = require('util')
 const { exec } = require('child_process')
- //const execP = util.promisify(exec);
 const tempy =  require('tempy')
 const fs =     require('fs-extra')
 const globby = require('globby')
 const path   = require('path')
-
 const fileExists = require('file-exists')
 const directoryExists = require('directory-exists')
-
 const chokidar = require('chokidar')
 
 
@@ -57,12 +54,7 @@ class AudioToolkit {
     const outputFile = 'output.' + ext
     let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + inputDir + path.basename(src)) )
     let processTask = () => processAudio(tmpDir,'mergeFiles', inputDir, outputFile)
-    let copyTask = () => {
-      return fs.copy(tmpDir + outputFile, destFile).then( () => {
-        // console.log('copied: ', tmpDir + outputFile)
-        checkFile(destFile)
-      })
-    }
+    let copyTask = () => fs.copy(tmpDir + outputFile, destFile)
     //console.log('tmpDir, inputDir, outputFile: ', tmpDir, inputDir, outputFile)
     return Promise.all( fileCopyTasks )
       .then( processTask )
@@ -73,31 +65,24 @@ class AudioToolkit {
   // splits audio and resolves to array of two dest files
   // implemented with docker script splitFile.sh
   splitFile(srcFile, position, destPart1, destPart2) {
-    if (!srcFile||!position||!toPos)
+    if (!srcFile||!position)
       throw "SplitFile warning: srcFile & position are required fields"
-    if (!destPart1) destPart1 = tempy.file({extension: path.extname(srcFile)})
-    if (!destPart2) destPart2 = tempy.file({extension: path.extname(srcFile)})
+    let ext = path.extname(srcFile).split('.')[1]
+    if (!destPart1) destPart1 = tempy.file({extension: ext})
+    if (!destPart2) destPart2 = tempy.file({extension: ext})
     const tmpDir = tempy.directory()  + '/'
-    const inputFile = 'input.'+ path.extname(srcFile)
-    const outputFile1 = 'output1.'+ path.extname(srcFile)
-    const outputFile2 = 'output2.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpDir + inputFile).then(
-      // Splits inputFile into two files: outputFile1 & outputFile2
-      // $1 inputFile: The file name of the source audio, with extension.
-      // $2 outputFile1: The filename for the audio before the split position.
-      // $3 outputFile2: The filename for the audio after the split position.
-      // $4 position: The position at which the source file should be split.
-      processAudio(tmpDir,'splitFile', inputFile,outputFile1,outputFile2,position)
-    ).then(
-      // copy out output files to destFile and resolve to array of 2 destFiles
-      Promise.all([
-        fs.copy(tmpDir+outputFile1, destPart1),
-        fs.copy(tmpDir+outputFile2, destPart2)
-      ])
-    ).then(
-      // resolve to an array of two files
-      () => [destPart1, destPart2]
-    )
+    const inputFile = 'input.'+ ext
+    const outputFile1 = 'output1.'+ ext
+    const outputFile2 = 'output2.'+ ext
+    const processAudioTask = () => processAudio(tmpDir,'splitFile', inputFile, outputFile1, outputFile2, ms2time(position))
+    // copy out output files to destFile and resolve to array of 2 destFiles
+    const copyFilesTask = () => Promise.all([
+      fs.copy(tmpDir+outputFile1, destPart1), fs.copy(tmpDir+outputFile2, destPart2)
+    ])
+    return fs.copy(srcFile, tmpDir + inputFile)
+      .then(processAudioTask)
+      .then(copyFilesTask)
+      .then( () => [destPart1, destPart2] )
   }
 
   // insert one file into another, resolves to destFile
@@ -213,6 +198,15 @@ class AudioToolkit {
     )
   }
 
+  checkDir(directory) {
+    if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
+     else console.log(` Directory "${directory}" not found`)
+  }
+  checkFile(filename) {
+    if (fileExists.sync(filename)) console.log(` File "${filename}" found`)
+     else console.log(` File "${filename}" not found`)
+  }
+
 }
 
 module.exports = AudioToolkit
@@ -221,42 +215,44 @@ module.exports = AudioToolkit
    Internal, not exported
 */
 
-function checkDir(directory) {
-  if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
-   else console.log(` Directory "${directory}" not found`)
+function ms2time(milliseconds) {
+  let s, m, h, ms;
+  s = Math.floor( milliseconds / 1000 ); // total seconds
+  ms = milliseconds - (s*1000) // ms remainder
+  m = Math.floor( s / 60 ) // total minutes
+  h = Math.floor( m / 60 ) // hours
+  m = m % 60; // minutes
+  s = s % 60; // seconds
+  ms = ms.toString().substr(0,3) // we only want 3 digits of ms
+  // adding a leading zeros if necessary
+  if ( s < 10 ) s = '0' + s
+  if ( m < 10 ) m = '0' + m
+  if ( h < 10 ) h = '0' + h
+  return  h + ':' + m + ':' + s + (ms.length? '.'+ms : '')
 }
-function checkFile(filename) {
-  if (fileExists.sync(filename)) console.log(` File "${filename}" found`)
-   else console.log(` File "${filename}" not found`)
+function time2ms(timestring) {
+  let [d,ms] = timestring.split('.')
+  let [h,m,s] = d.split(':')
+  return (Number(h)*60*60*1000) + (Number(m)*60*1000) + (Number(s)*1000) + Number(ms)
 }
-
 
 function processAudio(sharedDir, scriptName, ...args){
   return new Promise((resolve, reject) => {
-    console.log('Step 1: call processAudio')
+    //console.log('Step 1: call processAudio')
     let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
-     console.log('Exec: '+ cmd)
+    //console.log('Exec: '+ cmd)
 
     // A hack to resolve when the script is done
     chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {
-      console.log('Step 3: file resolver -- marker file found')
+      //  console.log('Step 3: file resolver -- marker file found')
       return resolve(true)
     })
 
     //call the docker script
     exec(cmd, (error, stdout, stderr) => { // never fires
-      console.log('Step 2: docker completed, this is not being called')
+      //  console.log('Step 3: docker completed, this is not usually being called')
       if (error) return reject(error)
       return resolve(stdout)
     })
   })
 }
-
-// function prepEnvironment() {
-//   return new Promise(function(resolve, reject) {
-//     let docker = exec('"eval $(docker-machine env default)"')
-//     docker.stdout.on('close', code => resolve($(code)) )
-//     docker.stdout.on('exit', code =>  resolve($(exit)) )
-//     docker.stdout.on('error', err => reject(err) )
-//   })
-// }
