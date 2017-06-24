@@ -68,13 +68,14 @@ class AudioToolkit {
     if (!srcFile||!position)
       throw "SplitFile warning: srcFile & position are required fields"
     let ext = path.extname(srcFile).split('.')[1]
+    let aud = this
     if (!destPart1) destPart1 = tempy.file({extension: ext})
     if (!destPart2) destPart2 = tempy.file({extension: ext})
     const tmpDir = tempy.directory()  + '/'
     const inputFile = 'input.'+ ext
     const outputFile1 = 'output1.'+ ext
     const outputFile2 = 'output2.'+ ext
-    const processAudioTask = () => processAudio(tmpDir,'splitFile', inputFile, outputFile1, outputFile2, ms2time(position))
+    const processAudioTask = () => processAudio(tmpDir,'splitFile', inputFile, outputFile1, outputFile2, aud.ms2time(position))
     // copy out output files to destFile and resolve to array of 2 destFiles
     const copyFilesTask = () => Promise.all([
       fs.copy(tmpDir+outputFile1, destPart1), fs.copy(tmpDir+outputFile2, destPart2)
@@ -135,14 +136,23 @@ class AudioToolkit {
   getMetaData(srcFile) {
     if (!srcFile) throw "GetMetaData warning: srcFile is a required field"
     const tmpDir = tempy.directory()  + '/'
-    const inputFile = 'input.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpSrc).then(
-      //  Gets audio metadata from a source audio file within the /data folder.
-      //  $1 inputFile: The file name of the source audio, with extension.
-      processAudio(tmpDir,'getMetaData', inputFile).done(
-        (metaData) => metaData
+    const inputFile = 'input'+ path.extname(srcFile)
+    const outputFile = 'output.json'
+    const aud = this
+    return fs.copy(srcFile, tmpDir + inputFile)
+      .then(
+        () => processAudio(tmpDir,'getMetaData', inputFile, outputFile)
+      ).then(
+        () => fs.readFile(tmpDir + outputFile).then(  (data) => {
+          let result = {}
+          data = data.toString().trim()
+          //console.log(data)
+          result.duration = data.replace(/.*?Duration:\s([0-7.:]+?)\,.*/ig, '$1')
+          result.bitrate = data.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1')
+          result.duration_ms = aud.time2ms(result.duration)
+          return result
+        })
       )
-    )
   }
 
   // normalize volume levels
@@ -153,21 +163,16 @@ class AudioToolkit {
     if (!srcFile) throw "NormalizeLevels warning: srcFile is a required field"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
     const tmpDir = tempy.directory()  + '/'
-    const inputFile = 'input.'+ path.extname(srcFile)
-    const outputFile = 'output.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpDir + inputFile).done(
-      // Normalizes audio levels for a source audio file in the /data folder.
-      // $1 inputFile: The file name of the source audio, with extension.
-      // $2 outputFile: The file name of the destination audio, with extension.
-      // TODO: Any additional parameters should be considered as options for the ffmpeg
-      // normalization routine.
-      processAudio(tmpDir,'normalizeLevels', inputFile,outputFile)
-    ).done(
-      // copy output file to destFile and resolve to destFile
-      fs.copy(tmpDir+outputFile, destFile)
-    ).done(
-      () => destFile
-    )
+    const inputFile = 'input'+ path.extname(srcFile)
+    const outputFile = 'output'+ path.extname(srcFile)
+    return fs.copy(srcFile, tmpDir + inputFile)
+      .then(
+        () => processAudio(tmpDir,'normalizeLevels', inputFile,outputFile)
+      ).then(
+        () => fs.copy(tmpDir + outputFile, destFile)
+      ).then(
+        () => destFile
+      )
   }
 
   // normalize silence length - remove excess inside and standardize edges
@@ -180,17 +185,12 @@ class AudioToolkit {
     const tmpDir = tempy.directory()  + '/'
     const inputFile = 'input.'+ path.extname(srcFile)
     const outputFile = 'output.'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpDir + inputFile).done(
-      // Normalizes silence
-      // $1 inputFile: The file name of the source audio, with extension.
-      // $2 outputFile: The file name of the destination audio, with extension.
-      // TODO: Any additional parameters should be considered as options for the ffmpeg
-      // normalization routine.
-      processAudio(tmpDir,'normalizeSilence', inputFile,outputFile)
-    ).done(
-      // copy output file to destFile and resolve to destFile
-      fs.copy(tmpDir+outputFile, destFile)
-    ).done(
+    return fs.copy(srcFile, tmpDir + inputFile)
+    .then(
+      () => processAudio(tmpDir,'normalizeSilence', inputFile,outputFile)
+    ).then(
+      () => fs.copy(tmpDir+outputFile, destFile)
+    ).then(
       () => destFile
     )
   }
@@ -204,6 +204,27 @@ class AudioToolkit {
      else console.log(` File "${filename}" not found`)
   }
 
+  ms2time(milliseconds) {
+    let s, m, h, ms;
+    s = Math.floor( milliseconds / 1000 ); // total seconds
+    ms = milliseconds - (s*1000) // ms remainder
+    m = Math.floor( s / 60 ) // total minutes
+    h = Math.floor( m / 60 ) // hours
+    m = m % 60; // minutes
+    s = s % 60; // seconds
+    ms = ms.toString().substr(0,3) // we only want 3 digits of ms
+    // adding a leading zeros if necessary
+    if ( s < 10 ) s = '0' + s
+    if ( m < 10 ) m = '0' + m
+    if ( h < 10 ) h = '0' + h
+    return  h + ':' + m + ':' + s + (ms.length? '.'+ms : '')
+  }
+  time2ms(timestring) {
+    let [d,ms] = timestring.split('.')
+    let [h,m,s] = d.split(':')
+    return (Number(h)*60*60*1000) + (Number(m)*60*1000) + (Number(s)*1000) + Number(ms)
+  }
+
 }
 
 module.exports = AudioToolkit
@@ -212,32 +233,13 @@ module.exports = AudioToolkit
    Internal, not exported
 */
 
-function ms2time(milliseconds) {
-  let s, m, h, ms;
-  s = Math.floor( milliseconds / 1000 ); // total seconds
-  ms = milliseconds - (s*1000) // ms remainder
-  m = Math.floor( s / 60 ) // total minutes
-  h = Math.floor( m / 60 ) // hours
-  m = m % 60; // minutes
-  s = s % 60; // seconds
-  ms = ms.toString().substr(0,3) // we only want 3 digits of ms
-  // adding a leading zeros if necessary
-  if ( s < 10 ) s = '0' + s
-  if ( m < 10 ) m = '0' + m
-  if ( h < 10 ) h = '0' + h
-  return  h + ':' + m + ':' + s + (ms.length? '.'+ms : '')
-}
-function time2ms(timestring) {
-  let [d,ms] = timestring.split('.')
-  let [h,m,s] = d.split(':')
-  return (Number(h)*60*60*1000) + (Number(m)*60*1000) + (Number(s)*1000) + Number(ms)
-}
+
 
 function processAudio(sharedDir, scriptName, ...args){
   return new Promise((resolve, reject) => {
     //console.log('Step 1: call processAudio')
     let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
-    //console.log('Exec: '+ cmd)
+    console.log('Exec: '+ cmd)
 
     // A hack to resolve when the script is done
     chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {

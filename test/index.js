@@ -67,7 +67,6 @@ describe("Audio Toolkit tests", function() {
   })
 
   it("Let me replace a section of a file ", function() {
-    // replaceSection(srcFile, fragmentFile, fromPos, toPos, destFile)
     let srcFile = TESTFILES + "6-test-replace-from.flac"
     let fragmentFile = TESTFILES + "6-test-replace-fromfrag.flac"
     let compareWith = TESTFILES + "6-test-replace-to.flac"
@@ -76,6 +75,36 @@ describe("Audio Toolkit tests", function() {
     })
     return chai.expect(testCompare).to.eventually.equal(true)
   })
+
+  it("Let me read metadata from a file ", function() {
+    let srcFile = TESTFILES + "7-test-getmetadata.flac"
+    let testCompare = aud.getMetaData(srcFile).then((meta) => {
+      return (meta.duration === '00:01:04.05'
+         && meta.bitrate === '443'
+         && meta.duration_ms === 64005
+       )
+    })
+    return chai.expect(testCompare).to.eventually.equal(true)
+  })
+
+  it("Let me normalize levels of a file ", function() {
+    let srcFile = TESTFILES + "8-test-normalizeLevels-from.flac"
+    let compareWith = TESTFILES + "8-test-normalizeLevels-to.flac"
+    let testCompare = aud.normalizeLevels(srcFile).then((outputFile) => {
+      return compareFiles(outputFile, compareWith)
+    })
+    return chai.expect(testCompare).to.eventually.equal(true)
+  })
+
+  it("Let me normalize silence inside a file ", function() {
+    let srcFile = TESTFILES + "9-test-normalizesilence-from.flac"
+    let compareWith = TESTFILES + "9-test-normalizesilence-to.flac"
+    let testCompare = aud.normalizeLevels(srcFile).then((outputFile) => {
+      return compareFiles(outputFile, compareWith)
+    })
+    return chai.expect(testCompare).to.eventually.equal(true)
+  })
+
 
 })
 
@@ -96,6 +125,7 @@ describe("Audio Toolkit tests", function() {
 6-test-splitfile-to1.flac
 6-test-splitfile-to2.flac
 7-test-getmetadata.flac
+
 8-test-normalizeLevels-from.mp3
 8-test-normalizeLevels-to.flac
 9-test-normalizesilence-from.mp3

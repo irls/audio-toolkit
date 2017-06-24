@@ -15,7 +15,7 @@ const aud = new AudioToolkit()
 // For example, let's convert a bunch of files to FLAC and merge into one
 // resolves to a converted file
 function importAudioBookFiles(srcFiles) {
-  return aud.convertFormat(srcFiles, 'flac').done((destFiles) => {
+  return aud.convertFormat(srcFiles, 'flac').then((destFiles) => {
     return aud.mergeFiles(destFiles)
   }
 }
@@ -66,6 +66,7 @@ normalizeLevels(srcFile, [destfile], [options])
 // normalize silence length - remove excess inside and standardize edges
 // implemented with docker script normalizeSilence.sh
 // options not yet implemented
-normalizeSilence(srcFile, [destFile], [options])
+normalizeSilence(srcFile, [destFile], [options])  // NOT YET IMPLEMENTED
+
 
 ```

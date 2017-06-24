@@ -9,8 +9,10 @@
 # TODO: Any additional parameters should be considered as options for the ffmpeg
 # normalization routine.
 
-# streaming loudness normalization -- might want to use dual-pass later?
-ffmpeg -i "/data/$1" -af loudnorm=I=-16:TP=-1.5:LRA=11 "/data/$2"
+
+# stub
+cp "/data/$1" "/data/$2"
+
 
 # mark this task complete
 touch "/data/taskcomplete.marker"
