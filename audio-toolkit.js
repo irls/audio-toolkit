@@ -57,12 +57,7 @@ class AudioToolkit {
     const outputFile = 'output.' + ext
     let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + inputDir + path.basename(src)) )
     let processTask = () => processAudio(tmpDir,'mergeFiles', inputDir, outputFile)
-    let copyTask = () => {
-      return fs.copy(tmpDir + outputFile, destFile).then( () => {
-        // console.log('copied: ', tmpDir + outputFile)
-        checkFile(destFile)
-      })
-    }
+    let copyTask = () => fs.copy(tmpDir + outputFile, destFile)
     //console.log('tmpDir, inputDir, outputFile: ', tmpDir, inputDir, outputFile)
     return Promise.all( fileCopyTasks )
       .then( processTask )
@@ -82,20 +77,11 @@ class AudioToolkit {
     const inputFile = 'input.'+ ext
     const outputFile1 = 'output1.'+ ext
     const outputFile2 = 'output2.'+ ext
-
-    // console.log('Should match', '\n',
-    //   '   100:', ms2time(100), time2ms(ms2time(100)), '\n',
-    //   '   1000:', ms2time(1000), time2ms(ms2time(1000)), '\n',
-    //   '   10000:', ms2time(10000), time2ms(ms2time(10000)), '\n',
-    //   '   100000:', ms2time(100000), time2ms(ms2time(100000)), '\n',
-    //   '   1000000:', ms2time(1000000), time2ms(ms2time(1000000)), '\n',
-    //   '   10000000:', ms2time(10000000), time2ms(ms2time(10000000)), '\n',
-    //   '   25000000:', ms2time(25000000), time2ms(ms2time(25000000)) )
-
-    console.log('SplitFile params: ', inputFile, outputFile1, outputFile2, ms2time(position))
     const processAudioTask = () => processAudio(tmpDir,'splitFile', inputFile, outputFile1, outputFile2, ms2time(position))
     // copy out output files to destFile and resolve to array of 2 destFiles
-    const copyFilesTask = Promise.all([fs.copy(tmpDir+outputFile1, destPart1), fs.copy(tmpDir+outputFile2, destPart2)])
+    const copyFilesTask = () => Promise.all([
+      fs.copy(tmpDir+outputFile1, destPart1), fs.copy(tmpDir+outputFile2, destPart2)
+    ])
     return fs.copy(srcFile, tmpDir + inputFile)
       .then(processAudioTask)
       .then(copyFilesTask)
@@ -215,6 +201,15 @@ class AudioToolkit {
     )
   }
 
+  checkDir(directory) {
+    if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
+     else console.log(` Directory "${directory}" not found`)
+  }
+  checkFile(filename) {
+    if (fileExists.sync(filename)) console.log(` File "${filename}" found`)
+     else console.log(` File "${filename}" not found`)
+  }
+
 }
 
 module.exports = AudioToolkit
@@ -222,15 +217,6 @@ module.exports = AudioToolkit
 /*
    Internal, not exported
 */
-
-function checkDir(directory) {
-  if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
-   else console.log(` Directory "${directory}" not found`)
-}
-function checkFile(filename) {
-  if (fileExists.sync(filename)) console.log(` File "${filename}" found`)
-   else console.log(` File "${filename}" not found`)
-}
 
 function ms2time(milliseconds) {
   let s, m, h, ms;
@@ -253,23 +239,21 @@ function time2ms(timestring) {
   return (Number(h)*60*60*1000) + (Number(m)*60*1000) + (Number(s)*1000) + Number(ms)
 }
 
-
-
 function processAudio(sharedDir, scriptName, ...args){
   return new Promise((resolve, reject) => {
-    console.log('Step 1: call processAudio')
+    //console.log('Step 1: call processAudio')
     let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
-    console.log('Exec: '+ cmd)
+    //console.log('Exec: '+ cmd)
 
     // A hack to resolve when the script is done
     chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {
-      console.log('Step 3: file resolver -- marker file found')
+      //  console.log('Step 3: file resolver -- marker file found')
       return resolve(true)
     })
 
     //call the docker script
     exec(cmd, (error, stdout, stderr) => { // never fires
-      console.log('Step 3: docker completed, this is not usually being called')
+      //  console.log('Step 3: docker completed, this is not usually being called')
       if (error) return reject(error)
       return resolve(stdout)
     })

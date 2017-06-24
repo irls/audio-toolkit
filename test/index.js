@@ -11,6 +11,8 @@ const TESTFILES = __dirname +"/testfiles/"
 // this allows us to test everything except the actual functionality ;)
 function compareFiles(file1, file2) {
   //console.log('comparefiles: ', file1, file2)
+  //aud.checkFile(file1)
+  //aud.checkFile(file2)
   return Promise.all([md5File(file1), md5File(file2)]).then(
     hashes => { return true } // should be: hashes[0]===hashes[1]
   ) //.catch(err => { throw(err) })
@@ -20,28 +22,28 @@ function compareFiles(file1, file2) {
 describe("Audio Toolkit tests", function() {
   this.timeout(15000)
 
-  // it("Let me convert a file from .mp3 to .flac", function() {
-  //   let srcFiles = [ TESTFILES + "1-test-convert-from.mp3" ]
-  //   let compareFile = TESTFILES + "1-test-convert-to.flac"
-  //   let testCompare = aud.convertFormat(srcFiles, 'flac').then((outputFiles) => {
-  //     return compareFiles(outputFiles[0], compareFile)
-  //   })
-  //   return chai.expect(testCompare).to.eventually.equal(true)
-  // })
-  //
-  // it("Let me merge some files together ", function() {
-  //   let srcFiles = [ TESTFILES + "2-test-merge-from-1.flac",  TESTFILES + "2-test-merge-from-2.flac" ]
-  //   let compareFile = TESTFILES + "2-test-merge-to.flac"
-  //   let testCompare = aud.mergeFiles(srcFiles).then((outputFile) => {
-  //     return compareFiles(outputFile, compareFile)
-  //   })
-  //   return chai.expect(testCompare).to.eventually.equal(true)
-  // })
+  it("Let me convert a file from .mp3 to .flac", function() {
+    let srcFiles = [ TESTFILES + "1-test-convert-from.mp3" ]
+    let compareFile = TESTFILES + "1-test-convert-to.flac"
+    let testCompare = aud.convertFormat(srcFiles, 'flac').then((outputFiles) => {
+      return compareFiles(outputFiles[0], compareFile)
+    })
+    return chai.expect(testCompare).to.eventually.equal(true)
+  })
+
+  it("Let me merge some files together ", function() {
+    let srcFiles = [ TESTFILES + "2-test-merge-from-1.flac",  TESTFILES + "2-test-merge-from-2.flac" ]
+    let compareFile = TESTFILES + "2-test-merge-to.flac"
+    let testCompare = aud.mergeFiles(srcFiles).then((outputFile) => {
+      return compareFiles(outputFile, compareFile)
+    })
+    return chai.expect(testCompare).to.eventually.equal(true)
+  })
 
   it("Let me split a file ", function() {
     let srcFile = TESTFILES + "3-test-split-from.flac"
     let compareWith = [TESTFILES + "3-test-split-to1.flac", TESTFILES + "3-test-split-to2.flac"]
-    let testCompare = aud.splitFile(srcFile, 500).then((outputFiles) => {
+    let testCompare = aud.splitFile(srcFile, 5000).then((outputFiles) => {
       return compareFiles(outputFiles[0], compareWith[0])
         .then(compareFiles(outputFiles[1], compareWith[1]))
     })
@@ -57,9 +59,9 @@ describe("Audio Toolkit tests", function() {
 2-test-merge-from-1.mp3
 2-test-merge-from-2.mp3
 2-test-merge-to.flac
-3-test-insertfrag-from1.mp3
-3-test-insertfrag-from2.mp3
-3-test-insertfrag-to.flac
+3-test-split-from.flac
+3-test-split-to1.flac
+3-test-split-to2.flac
 4-test-deletesect-from.mp3
 4-test-deletesect-to.flac
 5-test-replacesec-from1.mp3
