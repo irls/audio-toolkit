@@ -15,9 +15,8 @@ const aud = new AudioToolkit()
 // For example, let's convert a bunch of files to FLAC and merge into one
 // resolves to a converted file
 function importAudioBookFiles(srcFiles) {
-  return aud.convertFormat(srcFiles, 'flac').then((destFiles) => {
-    return aud.mergeFiles(destFiles)
-  }
+  return aud.convertFormat(srcFiles, 'flac')
+    .then( (destFiles) => aud.mergeFiles(destFiles) )
 }
 ```
 
