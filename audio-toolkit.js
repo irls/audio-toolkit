@@ -2,15 +2,12 @@
 
 const util = require('util')
 const { exec } = require('child_process')
- //const execP = util.promisify(exec);
 const tempy =  require('tempy')
 const fs =     require('fs-extra')
 const globby = require('globby')
 const path   = require('path')
-
 const fileExists = require('file-exists')
 const directoryExists = require('directory-exists')
-
 const chokidar = require('chokidar')
 
 
@@ -259,12 +256,3 @@ function processAudio(sharedDir, scriptName, ...args){
     })
   })
 }
-
-// function prepEnvironment() {
-//   return new Promise(function(resolve, reject) {
-//     let docker = exec('"eval $(docker-machine env default)"')
-//     docker.stdout.on('close', code => resolve($(code)) )
-//     docker.stdout.on('exit', code =>  resolve($(exit)) )
-//     docker.stdout.on('error', err => reject(err) )
-//   })
-// }

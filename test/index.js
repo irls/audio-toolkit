@@ -10,9 +10,6 @@ const TESTFILES = __dirname +"/testfiles/"
 // compareFiles resolves to true -- until our test files are ready
 // this allows us to test everything except the actual functionality ;)
 function compareFiles(file1, file2) {
-  //console.log('comparefiles: ', file1, file2)
-  //aud.checkFile(file1)
-  //aud.checkFile(file2)
   return Promise.all([md5File(file1), md5File(file2)]).then(
     hashes => { return true } // should be: hashes[0]===hashes[1]
   ) //.catch(err => { throw(err) })
