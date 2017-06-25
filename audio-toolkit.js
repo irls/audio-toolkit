@@ -93,25 +93,20 @@ class AudioToolkit {
     if (!srcFile||!fragmentFile||!position)
      throw "InsertFragment warning: srcFile, fragmentFile and position are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
-
     const tmpDir = tempy.directory() + '/'
     const inputFile = 'input'+ path.extname(srcFile)
     const fragFile = 'fragment'+ path.extname(srcFile)
     const outputFile = 'output'+ path.extname(srcFile)
-
     const processAudioTask = processAudio(tmpDir, 'insertFragment',
       inputFile, fragFile, outputFile, aud.ms2time(position))
-
     const copyFileTasks = () => Promise.all([
       fs.copy(srcFile, tmpDir + inputFile),
       fs.copy(fragmentFile, tmpDir + fragFile)
     ])
-
     return copyFileTasks()
       .then( () => processAudioTask )
       .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
       .then( () => destFile )
-
     // return aud.splitFile(srcFile, position).then((files) => {
     //   return aud.mergeFiles([files[0], fragmentFile, files[1]], destFile)
     // })
@@ -124,14 +119,26 @@ class AudioToolkit {
     if (!srcFile||!fromPos||!toPos)
      throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
-    var partA, partB
-    return aud.splitFile(srcFile, toPos).then((files) => {
-      partB = files[1]
-      return aud.splitFile(files[0], fromPos).then((files) => {
-        partA = files[0]
-      })
-    })
-    .then(()=>aud.mergeFiles([partA, partB], destFile))
+    const tmpDir = tempy.directory() + '/'
+    const inputFile = 'input'+ path.extname(srcFile)
+    const outputFile = 'output'+ path.extname(srcFile)
+    const processAudioTask = processAudio(tmpDir, 'deleteSection',
+      inputFile, outputFile, aud.ms2time(fromPos), aud.ms2time(toPos) )
+    const copyFileTask = () => fs.copy(srcFile, tmpDir + inputFile)
+
+    return copyFileTask()
+      .then( () => processAudioTask )
+      .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
+      .then( () => destFile )
+
+    // var partA, partB
+    // return aud.splitFile(srcFile, toPos).then((files) => {
+    //   partB = files[1]
+    //   return aud.splitFile(files[0], fromPos).then((files) => {
+    //     partA = files[0]
+    //   })
+    // })
+    // .then(()=>aud.mergeFiles([partA, partB], destFile))
   }
 
   // deletes section, resolves to destFile
