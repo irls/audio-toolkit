@@ -56,7 +56,7 @@ normalizeLevels(srcFile, [destfile], [options])
 
 // normalize silence length - remove excess inside and standardize edges
 // options not yet implemented
-normalizeSilence(srcFile, [destFile], [options])  // NOT YET IMPLEMENTED
+normalizeSilence(srcFile, [destFile], [options])   
 
 
 ```
