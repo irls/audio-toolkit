@@ -10,8 +10,10 @@
 # normalization routine.
 
 
-# stub
-cp "/data/$1" "/data/$2"
+# https://stackoverflow.com/questions/25697596/using-ffmpeg-with-silencedetect-to-remove-audio-silence
+# https://ffmpeg.org/ffmpeg-filters.html#silenceremove
+ffmpeg -i "/data/$1" -af silenceremove=0:0:0:-1:1:-90dB "/data/$2"
+
 
 
 # mark this task complete
