@@ -93,9 +93,28 @@ class AudioToolkit {
     if (!srcFile||!fragmentFile||!position)
      throw "InsertFragment warning: srcFile, fragmentFile and position are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
-    return aud.splitFile(srcFile, position).then((files) => {
-      return aud.mergeFiles([files[0], fragmentFile, files[1]], destFile)
-    })
+
+    const tmpDir = tempy.directory() + '/'
+    const inputFile = 'input'+ path.extname(srcFile)
+    const fragFile = 'fragment'+ path.extname(srcFile)
+    const outputFile = 'output'+ path.extname(srcFile)
+
+    const processAudioTask = processAudio(tmpDir, 'insertFragment',
+      inputFile, fragFile, outputFile, aud.ms2time(position))
+
+    const copyFileTasks = () => Promise.all([
+      fs.copy(srcFile, tmpDir + inputFile),
+      fs.copy(fragmentFile, tmpDir + fragFile)
+    ])
+
+    return copyFileTasks()
+      .then( () => processAudioTask )
+      .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
+      .then( () => destFile )
+
+    // return aud.splitFile(srcFile, position).then((files) => {
+    //   return aud.mergeFiles([files[0], fragmentFile, files[1]], destFile)
+    // })
   }
 
   // deletes section, resolves to destFile
