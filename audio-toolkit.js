@@ -18,7 +18,6 @@ class AudioToolkit {
   }
 
   // resolves to an array of converted files
-  // implemented with docker script convertFormat.sh
   convertFormat(srcFiles, toFormat) {
     // console.log('convertFormat', srcFiles, toFormat)
     if (!srcFiles || !toFormat)
@@ -41,7 +40,6 @@ class AudioToolkit {
   }
 
   // joins files, resolves to destFile
-  // implemented with docker script mergeFiles.sh
   mergeFiles(srcFiles, destFile) {
     //console.log('mergefiles: ', srcFiles, destFile)
     if (!srcFiles) throw "MergeFiles warning: srcFile is a required field"
@@ -63,7 +61,6 @@ class AudioToolkit {
   }
 
   // splits audio and resolves to array of two dest files
-  // implemented with docker script splitFile.sh
   splitFile(srcFile, position, destPart1, destPart2) {
     if (!srcFile||!position)
       throw "SplitFile warning: srcFile & position are required fields"
@@ -87,7 +84,6 @@ class AudioToolkit {
   }
 
   // insert one file into another, resolves to destFile
-  // implemented as split + merge
   insertFragment(srcFile, fragmentFile, position, destFile) {
     var aud = this
     if (!srcFile||!fragmentFile||!position)
@@ -113,7 +109,6 @@ class AudioToolkit {
   }
 
   // deletes section, resolves to destFile
-  // implemented as split + split + merge
   deleteSection(srcFile, fromPos, toPos, destFile) {
     var aud = this
     if (!srcFile||!fromPos||!toPos)
@@ -130,19 +125,9 @@ class AudioToolkit {
       .then( () => processAudioTask )
       .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
       .then( () => destFile )
-
-    // var partA, partB
-    // return aud.splitFile(srcFile, toPos).then((files) => {
-    //   partB = files[1]
-    //   return aud.splitFile(files[0], fromPos).then((files) => {
-    //     partA = files[0]
-    //   })
-    // })
-    // .then(()=>aud.mergeFiles([partA, partB], destFile))
   }
 
   // deletes section, resolves to destFile
-  // implemented as split + split + merge
   replaceSection(srcFile, fragmentFile, fromPos, toPos, destFile) {
     if (!srcFile||!fragmentFile||!fromPos||!toPos)
      throw "ReplaceSection warning: srcFile, fragmentFile, fromPos and toPos are required fields"
@@ -165,15 +150,24 @@ class AudioToolkit {
       .then( () => processAudioTask )
       .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
       .then( () => destFile )
+  }
 
-
-    // var partA, partB
-    // return aud.splitFile(srcFile, toPos).then((files) => {
-    //   partB = files[1]
-    //   return aud.splitFile(files[0], fromPos).then((files) => {
-    //     partA = files[0]
-    //   })
-    // }).then( () => aud.mergeFiles([partA, fragmentFile, partB], destFile) )
+  // exctracts section, resolves to destFile
+  extractSection(srcFile, fromPos, toPos, destFile) {
+    var aud = this
+    if (!srcFile||!fromPos||!toPos)
+     throw "ExtractSection warning: srcFile, fromPos and toPos are required fields"
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
+    const tmpDir = tempy.directory() + '/'
+    const inputFile = 'input'+ path.extname(srcFile)
+    const outputFile = 'output'+ path.extname(srcFile)
+    const processAudioTask = processAudio(tmpDir, 'extractSection',
+      inputFile, outputFile, aud.ms2time(fromPos), aud.ms2time(toPos) )
+    const copyFileTask = () => fs.copy(srcFile, tmpDir + inputFile)
+    return copyFileTask()
+      .then( () => processAudioTask )
+      .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
+      .then( () => destFile )
   }
 
   // returns obj with file size, audio length, format, bitrate etc.
