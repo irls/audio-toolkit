@@ -47,6 +47,9 @@ deleteSection(srcFile, fromPos, toPos, [destFile])
 // deletes section, resolves to destFile
 replaceSection(srcFile, fragmentFile, fromPos, toPos, [destFile])
 
+// TODO: forgot this one
+extractSection(srcFile, fromPos, toPos, [destFile])
+
 // returns obj with file size, audio length, format, bitrate etc.
 getMetaData(srcFile)
 
