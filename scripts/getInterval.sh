@@ -1,12 +1,12 @@
 #!/bin/bash
 #
 
-# Splits inputFile into two files: outputFile1 & outputFile2
+# Gets part of the inputFile, starting from start position with duration duration and saves it to the outputFile
 
 # $1 inputFile: The file name of the source audio, with extension.
 # $2 outputFile: The filename for the audio result file.
 # $3 start: Start position of the part.
-# $4 end: End position of the part.
+# $4 duration: Duration of the part.
 # $5 tmpDir: Temporary directory.
 
 # run task
