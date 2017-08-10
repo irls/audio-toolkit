@@ -239,6 +239,35 @@ class AudioToolkit {
       () => destFile
     )
   }
+  
+  /**
+   * Gets interval from audiofile
+   * srcFile - audiofile
+   * start - start position, in seconds
+   * end - end position in seconds
+   * dest - the result file
+   * @returns {Promise}
+   */
+  getInterval(srcFile, start, end, dest) {
+    if (!srcFile||typeof start === 'undefined'||!end||(start>end))
+      throw "getInterval warning: srcFile & start position & end position are required fields, start should be less than end"
+    let ext = path.extname(srcFile).split('.')[1]
+    let aud = this
+    start = parseFloat(start);
+    end = parseFloat(end);
+    const tmpDir = tempy.directory()  + '/'
+    const inputFile = 'input.'+ ext
+    const outputFile = 'output.'+ ext
+    const processAudioTask = () => processAudio(tmpDir,'getInterval', inputFile, dest, start, end - start, tmpDir)
+    // copy out output files to destFile and resolve to array of 2 destFiles
+    const copyFilesTask = () => Promise.all([
+      fs.copy(tmpDir+outputFile, dest)
+    ])
+    return fs.copy(srcFile, tmpDir + inputFile)
+      .then(processAudioTask)
+      .then(copyFilesTask)
+      .then( () => [dest] )
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
