@@ -258,15 +258,27 @@ class AudioToolkit {
     const tmpDir = tempy.directory()  + '/'
     const inputFile = 'input.'+ ext
     const outputFile = 'output.'+ ext
-    const processAudioTask = () => processAudio(tmpDir,'getInterval', inputFile, dest, start, end - start, tmpDir)
-    // copy out output files to destFile and resolve to array of 2 destFiles
-    const copyFilesTask = () => Promise.all([
-      fs.copy(tmpDir+outputFile, dest)
-    ])
-    return fs.copy(srcFile, tmpDir + inputFile)
-      .then(processAudioTask)
-      .then(copyFilesTask)
-      .then( () => [dest] )
+    const inputCopyTask = fs.copy(srcFile, tmpDir + inputFile);// copy input file to temp directory
+    return Promise.all([inputCopyTask])
+      .then(() => {
+        return processAudio(tmpDir,'getInterval', inputFile, outputFile, start, end - start)
+          .then(() => {
+            return fs.copy(tmpDir+outputFile, dest)// copy result file to destination directory
+              .then(() => {
+                fs.remove(tmpDir.replace(/\/$/, ''));// remove temporary directory
+                return Promise.resolve(dest);
+              })
+              .catch(err => {
+                return Promise.reject(err);
+              });
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      })
+      .catch(err => {
+        return Promise.reject(err);
+      });
   }
 
   checkDir(directory) {
