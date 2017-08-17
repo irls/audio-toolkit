@@ -334,10 +334,12 @@ function processAudio(sharedDir, scriptName, ...args){
     })
 
     //call the docker script
-    exec(cmd, (error, stdout, stderr) => { // never fires
+    exec(cmd, {maxBuffer: 1024 * 5000}, (error, stdout, stderr) => { // never fires
       //  console.log('Step 3: docker completed, this is not usually being called')
-      if (error) return reject(error)
-      return resolve(stdout)
+      if (error) {
+        return reject(error);
+      }
+      return resolve(true);
     })
   })
 }
