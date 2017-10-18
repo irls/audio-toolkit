@@ -180,21 +180,23 @@ class AudioToolkit {
     if (!srcFile || !silenceLength || !position) {
       throw "Insert silence warning: srcFile and silenceLength and position are required fields"
     }
-    let silenceFile = 'silence.wav';
+    
     let srcExt = path.extname(srcFile).split('.')[1];
+    if (!destFile) {
+      destFile = 'target.' + srcExt;
+    }
     let destExt = path.extname(destFile).split('.')[1];
-    const tmpDir = tempy.directory() + '/'
-    const processAudioTask = processAudio(tmpDir, 'createSilence', silenceLength, silenceFile)
-    return Promise.all([processAudioTask])
-      .then(processed => {
-        return this.convertFormat([tmpDir + silenceFile], srcExt)
-          .then((converted) => {
-            return this.insertFragment(srcFile, converted[0], position, tmpDir + destFile + '.wav')
-              .then((withSilence) => {
-                return this.convertFormat([withSilence], destExt)
-              });
-          })
-        //return this.replaceSection(srcFile, tmpDir + silenceFile, position, position, destFile);
+    const tmpDir = tempy.directory() + '/';
+    const inputFile = 'source.'+ srcExt;
+    const copyFileTasks = () => Promise.all([
+      fs.copy(srcFile, tmpDir + inputFile)
+    ])
+    return copyFileTasks()
+      .then(() => {
+        return processAudio(tmpDir, 'insertSilence', silenceLength, inputFile, position, destFile)
+          .then(() => {
+            return tmpDir + destFile;
+          });
       })
   }
 
