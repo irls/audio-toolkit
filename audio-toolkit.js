@@ -176,14 +176,17 @@ class AudioToolkit {
     // }).then( () => aud.mergeFiles([partA, fragmentFile, partB], destFile) )
   }
   
-  insertSilence(srcFile, silenceLength, position, destFile) {
-    if (!srcFile || !silenceLength || !position) {
+  insertSilence(srcFile, silenceLength, position, destFile, append) {
+    if (!srcFile || !silenceLength || typeof position === 'undefined') {
       throw "Insert silence warning: srcFile and silenceLength and position are required fields"
     }
     
     let srcExt = path.extname(srcFile).split('.')[1];
     if (!destFile) {
       destFile = 'target.' + srcExt;
+    }
+    if (typeof append === 'undefined') {
+      append = 0;
     }
     let destExt = path.extname(destFile).split('.')[1];
     const tmpDir = tempy.directory() + '/';
@@ -193,7 +196,7 @@ class AudioToolkit {
     ])
     return copyFileTasks()
       .then(() => {
-        return processAudio(tmpDir, 'insertSilence', silenceLength, inputFile, position, destFile)
+        return processAudio(tmpDir, 'insertSilence', silenceLength, inputFile, position, destFile, append)
           .then(() => {
             return tmpDir + destFile;
           });
