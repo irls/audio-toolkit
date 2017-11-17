@@ -219,7 +219,7 @@ class AudioToolkit {
           let result = {}
           data = data.toString().trim()
           //console.log(data)
-          result.duration = data.replace(/.*?Duration:\s([0-7.:]+?)\,.*/ig, '$1')
+          result.duration = data.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1')
           result.bitrate = data.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1')
           result.duration_ms = aud.time2ms(result.duration)
           return result
