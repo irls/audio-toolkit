@@ -10,7 +10,7 @@ for i in /data/*.*; do
   # remove the file extension (safely)
   FILE="${i%.*}"
   # convert format and add new file extension
-  ffmpeg -i "$i" "$FILE.$1";
+  ffmpeg -i "$i" -ar 44100 "$FILE.$1";
 done
 
 
