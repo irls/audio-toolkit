@@ -55,11 +55,15 @@ class AudioToolkit {
     let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + inputDir + path.basename(src)) )
     let processTask = () => processAudio(tmpDir,'mergeFiles', inputDir, outputFile)
     let copyTask = () => fs.copy(tmpDir + outputFile, destFile)
+    let self = this;
     //console.log('tmpDir, inputDir, outputFile: ', tmpDir, inputDir, outputFile)
     return Promise.all( fileCopyTasks )
       .then( processTask )
       .then( copyTask )
-      .then( () =>  destFile )
+      .then( () =>  {
+        self._removeDirRecursive(tmpDir);
+        return Promise.resolve(destFile)
+      })
   }
 
   // splits audio and resolves to array of two dest files
@@ -125,11 +129,15 @@ class AudioToolkit {
     const processAudioTask = processAudio(tmpDir, 'deleteSection',
       inputFile, outputFile, aud.ms2time(fromPos), aud.ms2time(toPos) )
     const copyFileTask = () => fs.copy(srcFile, tmpDir + inputFile)
+    let self = this;
 
     return copyFileTask()
       .then( () => processAudioTask )
       .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
-      .then( () => destFile )
+      .then( () => {
+        self._removeDirRecursive(tmpDir);
+        return Promise.resolve(destFile)
+      } )
 
     // var partA, partB
     // return aud.splitFile(srcFile, toPos).then((files) => {
@@ -222,6 +230,7 @@ class AudioToolkit {
           result.duration = data.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1')
           result.bitrate = data.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1')
           result.duration_ms = aud.time2ms(result.duration)
+          aud._removeDirRecursive(tmpDir);
           return result
         })
       )
@@ -336,6 +345,27 @@ class AudioToolkit {
     let [d,ms] = timestring.split('.')
     let [h,m,s] = d.split(':')
     return (Number(h)*60*60*1000) + (Number(m)*60*1000) + (Number(s)*1000) + Number(ms)
+  }
+  
+  _removeParentDir(file) {
+    let parts = file.split('/');
+    parts.splice(parts.length - 1, 1);
+    this._removeDirRecursive(parts.join('/'))
+  }
+  
+  _removeDirRecursive(path) {
+    if (fs.existsSync(path)) {
+      var self = this;
+      fs.readdirSync(path).forEach(function(file, index){
+        var curPath = path + "/" + file;
+        if (fs.lstatSync(curPath).isDirectory()) { // recurse
+          self._removeDirRecursive(curPath);
+        } else { // delete file
+          fs.unlinkSync(curPath);
+        }
+      });
+      fs.rmdirSync(path);
+    }
   }
 
 }
