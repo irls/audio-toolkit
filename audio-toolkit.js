@@ -339,6 +339,10 @@ class AudioToolkit {
     if ( s < 10 ) s = '0' + s
     if ( m < 10 ) m = '0' + m
     if ( h < 10 ) h = '0' + h
+    if ( ms.length > 0 && ms.length < 3 ) {
+      let strpad = '000';
+      ms = strpad.substring(0, strpad.length - ms.length) + ms;
+    }
     return  h + ':' + m + ':' + s + (ms.length? '.'+ms : '')
   }
   time2ms(timestring) {
