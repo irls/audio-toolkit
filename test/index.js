@@ -104,6 +104,15 @@ describe("Audio Toolkit tests", function() {
     })
     return chai.expect(testCompare).to.eventually.equal(true)
   })
+  
+  it("Let me find silent places", function() {
+    let source = TESTFILES + "detect-silence.flac"
+    let silence = aud.detectSilence(source, '-50dB', 1)
+    let testCompare = silence.then((response) => {
+      return response.length
+    })
+    return chai.expect(testCompare).to.eventually.equal(3)
+  })
 
 
 })

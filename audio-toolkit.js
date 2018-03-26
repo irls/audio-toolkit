@@ -316,6 +316,49 @@ class AudioToolkit {
         return Promise.reject(err);
       });
   }
+  
+  detectSilence(source, db = null, length = null) {
+    if (!source) {
+      throw "detectSilence warning: source is required";
+    }
+    if (db === null) {
+      db = '-50dB';
+    }
+    if (length === null) {
+      length = 3;
+    }
+    const tmpDir = tempy.directory()  + '/'
+    const inputFile = 'input'+ path.extname(source)
+    const outputFile = 'output.json'
+    const aud = this
+    return fs.copy(source, tmpDir + inputFile)
+      .then(
+        () => processAudio(tmpDir,'detectSilence', inputFile, outputFile, db, length)
+      ).then(
+        () => fs.readFile(tmpDir + outputFile).then(  (data) => {
+          let result = [];
+          data = data.toString().trim()
+          //console.log(data)
+          var regExpStart = /silence_start: ([\d\.]+)/gi
+          var regExpEnd = /silence_end: ([\d\.]+)/gi
+          var match_start = null;
+          
+          while (match_start = regExpStart.exec(data)) {
+            if (match_start && typeof match_start[1] !== 'undefined') {
+              var match_end = regExpEnd.exec(data);
+              if (match_end && typeof match_end[1] !== 'undefined') {
+                result.push({
+                  start: parseFloat(match_start[1]),
+                  end: parseFloat(match_end[1])
+                });
+              }
+            }
+          }
+          aud._removeDirRecursive(tmpDir);
+          return Promise.resolve(result)
+        })
+      )
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
