@@ -4,6 +4,7 @@ var  chai = require("chai");
      chai.use(require("chai-as-promised")); // for use with promises
 const md5File = require('md5-file/promise')
 const TESTFILES = __dirname +"/testfiles/"
+var fs = require('fs-extra')
 
 
 
@@ -27,6 +28,14 @@ describe("Audio Toolkit tests", function() {
     })
     return chai.expect(testCompare).to.eventually.equal(true)
   })
+  
+  it("Let me convert a file from .flac to .mp3", function() {
+    let srcFile = [ TESTFILES + "gospel-wealth-single.flac" ]
+    let destFile = TESTFILES + "gospel-wealth-single.mp3"
+    aud.convertFormat(srcFile, 'flac').then( arr => {
+      fs.copy(arr[0], destFile)
+    }) 
+  })  
 
   it("Let me merge some files together ", function() {
     let srcFiles = [ TESTFILES + "2-test-merge-from-1.flac",  TESTFILES + "2-test-merge-from-2.flac" ]

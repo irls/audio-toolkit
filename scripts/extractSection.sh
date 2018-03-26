@@ -11,6 +11,7 @@
 # ext="${1##*.}"
 
 # extract the selection to outputFile
+## TODO: check that the syntax is correct
 ffmpeg -i "/data/$1" -acodec copy -t $3 -ss $4 "/data/$2"
 
 
