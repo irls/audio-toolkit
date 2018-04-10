@@ -339,14 +339,20 @@ class AudioToolkit {
           let result = [];
           data = data.toString().trim()
           //console.log(data)
-          var regExpStart = /silence_start: ([\d\.]+)/gi
-          var regExpEnd = /silence_end: ([\d\.]+)/gi
+          var regExpStart = /silence_start: ([-]?[\d\.]+)/gi
+          var regExpEnd = /silence_end: ([-]?[\d\.]+)/gi
           var match_start = null;
           
           while (match_start = regExpStart.exec(data)) {
             if (match_start && typeof match_start[1] !== 'undefined') {
               var match_end = regExpEnd.exec(data);
               if (match_end && typeof match_end[1] !== 'undefined') {
+                if (match_start[1].indexOf('-') !== -1) {
+                  match_start[1] = 0;
+                }
+                if (match_end[1].indexOf('-') !== -1) {
+                  match_end[1] = 0;
+                }
                 result.push({
                   start: parseFloat(match_start[1]),
                   end: parseFloat(match_end[1])
