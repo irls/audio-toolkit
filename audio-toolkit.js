@@ -52,7 +52,7 @@ class AudioToolkit {
     const tmpDir = tempy.directory()  + '/'
     const inputDir = 'input/'
     const outputFile = 'output.' + ext
-    let fileCopyTasks = srcFiles.map((src, i) => fs.copy(src, tmpDir + inputDir + i + '-' + path.basename(src)) )
+    let fileCopyTasks = srcFiles.map((src, i) => fs.copy(src, tmpDir + inputDir + ('0'.repeat(11 - ('' + i).length)) + i + '.' + ext) )//
     let processTask = () => processAudio(tmpDir,'mergeFiles', inputDir, outputFile)
     let copyTask = () => fs.copy(tmpDir + outputFile, destFile)
     let self = this;
