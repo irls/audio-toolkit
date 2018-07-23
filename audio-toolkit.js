@@ -42,7 +42,7 @@ class AudioToolkit {
 
   // joins files, resolves to destFile
   // implemented with docker script mergeFiles.sh
-  mergeFiles(srcFiles, destFile) {
+  mergeFiles(srcFiles, destFile, useProtocol = false) {
     //console.log('mergefiles: ', srcFiles, destFile)
     if (!srcFiles) throw "MergeFiles warning: srcFile is a required field"
     let ext = path.extname(srcFiles[0]).split('.')[1]
@@ -53,7 +53,7 @@ class AudioToolkit {
     const inputDir = 'input/'
     const outputFile = 'output.' + ext
     let fileCopyTasks = srcFiles.map((src, i) => fs.copy(src, tmpDir + inputDir + ('0'.repeat(11 - ('' + i).length)) + i + '.' + ext) )//
-    let processTask = () => processAudio(tmpDir,'mergeFiles', inputDir, outputFile)
+    let processTask = () => processAudio(tmpDir,useProtocol?'mergeFilesProtocol':'mergeFiles', inputDir, outputFile)
     let copyTask = () => fs.copy(tmpDir + outputFile, destFile)
     let self = this;
     //console.log('tmpDir, inputDir, outputFile: ', tmpDir, inputDir, outputFile)
