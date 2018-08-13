@@ -1,10 +1,10 @@
 {
   "name": "audio-toolkit",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "main": "audio-toolkit.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/djones1844/audio-toolkit.git"
+    "url": "git+https://github.com/chadananda/audio-toolkit.git"
   },
   "scripts": {
     "test": "mocha",

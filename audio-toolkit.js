@@ -292,12 +292,25 @@ class AudioToolkit {
     start = parseFloat(start);
     end = parseFloat(end);
     const tmpDir = tempy.directory()  + '/'
-    const inputFile = 'input.'+ ext
+    //const inputFile = 'input.'+ ext
     const outputFile = 'output.'+ ext
-    const inputCopyTask = fs.copy(srcFile, tmpDir + inputFile);// copy input file to temp directory
-    return Promise.all([inputCopyTask])
-      .then(() => {
-        return processAudio(tmpDir,'getInterval', inputFile, outputFile, start, end - start)
+    //const inputCopyTask = fs.copy(srcFile, tmpDir + inputFile);// copy input file to temp directory
+    //return Promise.all([inputCopyTask])
+      //.then(() => {
+      let srcDir = srcFile.split('/');
+      let inputFile = 'input/' + srcDir.pop();
+      srcDir = srcDir.join('/') + '/';
+      let mntDir = [
+        {
+          src: srcDir,
+          target: '/data/input'
+        },
+        {
+          src: tmpDir,
+          target: '/data'
+        }
+      ];
+        return processAudio(mntDir,'getInterval', inputFile, outputFile, start, end - start)
           .then(() => {
             return fs.copy(tmpDir+outputFile, dest)// copy result file to destination directory
               .then(() => {
@@ -311,10 +324,10 @@ class AudioToolkit {
           .catch(err => {
             return Promise.reject(err);
           });
-      })
-      .catch(err => {
-        return Promise.reject(err);
-      });
+      //})
+      //.catch(err => {
+        //return Promise.reject(err);
+      //});
   }
   
   detectSilence(source, db = null, length = null) {
@@ -434,7 +447,15 @@ module.exports = AudioToolkit
 function processAudio(sharedDir, scriptName, ...args){
   return new Promise((resolve, reject) => {
     // console.log('Step 1: call processAudio')
-    let cmd = `docker run --rm -v ${sharedDir}:/data dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
+    let cmd = `docker run --rm `;
+    if (Array.isArray(sharedDir)) {
+      sharedDir.forEach(sd => {
+        cmd+=`-v ${sd.src}:${sd.target} `;
+      });
+    } else {
+      cmd+=`-v ${sharedDir}:/data `;
+    }
+    cmd+= `dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
     // console.log('Exec: '+ cmd)
 
     // A hack to resolve when the script is done
