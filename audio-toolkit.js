@@ -330,7 +330,7 @@ class AudioToolkit {
       //});
   }
   
-  detectSilence(source, db = null, length = null) {
+  detectSilence(source, db = null, length = null, keep_empty = false) {
     if (!source) {
       throw "detectSilence warning: source is required";
     }
@@ -370,6 +370,10 @@ class AudioToolkit {
                   start: parseFloat(match_start[1]),
                   end: parseFloat(match_end[1])
                 });
+              } else if (keep_empty) {
+                result.push({
+                  start: parseFloat(match_start[1])
+                })
               }
             }
           }
