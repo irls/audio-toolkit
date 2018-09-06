@@ -310,7 +310,7 @@ class AudioToolkit {
           target: '/data'
         }
       ];
-        return processAudio(mntDir,'getInterval', inputFile, outputFile, start, end - start)
+        return processAudio(mntDir,'getInterval', `"${inputFile}"`, outputFile, start, end - start)
           .then(() => {
             return fs.copy(tmpDir+outputFile, dest)// copy result file to destination directory
               .then(() => {
