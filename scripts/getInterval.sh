@@ -8,7 +8,12 @@
 # $4 duration: Duration of the part.
 
 # run task
-ffmpeg -ss $3 -i "/data/$1" -t $4 /data/$2
+duration=''
+if [[ $4 ]]
+then
+  duration='-t '$4
+fi
+ffmpeg -ss $3 -i "/data/$1" $duration /data/$2
 
 # mark this task complete
 touch "/data/taskcomplete.marker"

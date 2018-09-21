@@ -285,12 +285,12 @@ class AudioToolkit {
    * @returns {Promise}
    */
   getInterval(srcFile, start, end, dest) {
-    if (!srcFile||typeof start === 'undefined'||!end||(start>end))
-      throw "getInterval warning: srcFile & start position & end position are required fields, start should be less than end"
+    if (!srcFile||typeof start === 'undefined'||(end && start>end))
+      throw "getInterval warning: srcFile & start position are required fields, start should be less than end"
     let ext = path.extname(srcFile).split('.')[1]
     let aud = this
     start = parseFloat(start);
-    end = parseFloat(end);
+    end = end ? parseFloat(end) - start : '';
     const tmpDir = tempy.directory()  + '/'
     //const inputFile = 'input.'+ ext
     const outputFile = 'output.'+ ext
@@ -310,7 +310,7 @@ class AudioToolkit {
           target: '/data'
         }
       ];
-        return processAudio(mntDir,'getInterval', `"${inputFile}"`, outputFile, start, end - start)
+        return processAudio(mntDir,'getInterval', `"${inputFile}"`, outputFile, start, end)
           .then(() => {
             return fs.copy(tmpDir+outputFile, dest)// copy result file to destination directory
               .then(() => {
