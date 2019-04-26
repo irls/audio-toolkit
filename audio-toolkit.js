@@ -120,7 +120,7 @@ class AudioToolkit {
   // implemented as split + split + merge
   deleteSection(srcFile, fromPos, toPos, destFile) {
     var aud = this
-    if (!srcFile||!fromPos||!toPos)
+    if (!srcFile||typeof fromPos === 'undefined' ||!toPos)
      throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
     const tmpDir = tempy.directory() + '/'
