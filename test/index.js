@@ -113,6 +113,18 @@ describe("Audio Toolkit tests", function() {
     })
     return chai.expect(testCompare).to.eventually.equal(3)
   })
+  
+  it("Let me insert a one second silence", function() {
+    let source = TESTFILES + "insertSilence.flac"
+    let silence = aud.insertSilence(source, 1, 1, 'withSilence.flac');
+    let testCompare = silence.then((response) => {
+      return aud.getMetaData(response)
+        .then(data => {
+          return Promise.resolve(data.duration);
+        })
+    })
+    return chai.expect(testCompare).to.eventually.equal('00:00:03.90');
+  })
 
 
 })
