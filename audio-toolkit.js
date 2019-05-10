@@ -414,7 +414,7 @@ class AudioToolkit {
   time2ms(timestring) {
     let [d,ms] = timestring.split('.')
     let [h,m,s] = d.split(':')
-    return (Number(h)*60*60*1000) + (Number(m)*60*1000) + (Number(s)*1000) + Number(ms)
+    return (Number(h)*60*60*1000) + (Number(m)*60*1000) + (Number(s)*1000) + Number(ms) * 10
   }
   
   _removeParentDir(file) {
