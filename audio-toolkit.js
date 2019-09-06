@@ -25,7 +25,9 @@ class AudioToolkit {
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
     if (!toFormat) toFormat = 'flac' // default format
     const tmpDir = tempy.directory() + '/'
-    let fileCopyTasks = srcFiles.map(src => fs.copy(src, tmpDir + path.basename(src)) )
+    let fileCopyTasks = srcFiles.map((src, i) => {
+      fs.copy(src, tmpDir + i + path.extname(src))
+    } )
     let processTask = () => processAudio(tmpDir,'convertFormat', toFormat)
     let collectTask = () => globby(`${tmpDir}*.${toFormat}`).then(paths => {
      //console.log(`Step 4: globby results in: ${tmpDir}*.${toFormat}`, paths)
