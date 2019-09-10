@@ -8,12 +8,12 @@
 # $4 duration: Duration of the part.
 
 # run task
-duration=''
+filter='atrim=start='$3
 if [[ $4 ]]
 then
-  duration='-t '$4
+  filter=$filter':duration='$4
 fi
-ffmpeg -ss $3 -i "/data/$1" $duration /data/$2
+ffmpeg -i "/data/$1" -af $filter /data/$2
 
 # mark this task complete
 touch "/data/taskcomplete.marker"
