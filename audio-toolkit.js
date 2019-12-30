@@ -316,7 +316,7 @@ class AudioToolkit {
           .then(() => {
             return fs.copy(tmpDir+outputFile, dest)// copy result file to destination directory
               .then(() => {
-                fs.remove(tmpDir.replace(/\/$/, ''));// remove temporary directory
+                fs.removeSync(tmpDir.replace(/\/$/, ''));// remove temporary directory
                 return Promise.resolve(dest);
               })
               .catch(err => {
@@ -346,7 +346,7 @@ class AudioToolkit {
     const inputFile = 'input'+ path.extname(source)
     const outputFile = 'output.json'
     const aud = this
-    return fs.copy(source, tmpDir + inputFile)
+    return this._copyFile(source, tmpDir + inputFile)
       .then(
         () => processAudio(tmpDir,'detectSilence', inputFile, outputFile, db, length)
       ).then(
@@ -438,6 +438,27 @@ class AudioToolkit {
       });
       fs.rmdirSync(path);
     }
+  }
+  
+  _copyFile(fromPath, toPath) {
+    return new Promise(function(resolve, reject) {
+      if (fromPath === toPath) {
+        resolve();
+      } else {
+        let toDir = toPath.split('/');
+        toDir.pop();
+        toDir = toDir.join('/');
+        fs.ensureDirSync(toDir);
+        var readStream = fs.createReadStream(fromPath);
+        var writeStream = fs.createWriteStream(toPath);
+        readStream.on('open', function () {
+          readStream.pipe(writeStream);
+        });
+        writeStream.on('finish', () => {
+          resolve();
+        });
+      }
+    });
   }
 
 }
