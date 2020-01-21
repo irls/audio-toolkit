@@ -384,6 +384,103 @@ class AudioToolkit {
         })
       )
   }
+  
+  forceMono(file, target) {
+    const tmpDir = tempy.directory()  + '/'
+    const inputFile = 'input'+ path.extname(file)
+    const outputFile = 'output.json'
+    const targetFile = 'output.' + file.split('.').pop();
+    let log = [];
+    return fs.copy(file, tmpDir + inputFile)
+      .then(
+        () => processAudio(tmpDir,'fileInfo', inputFile, outputFile)
+      ).then(
+        () => fs.readFile(tmpDir + outputFile).then(  (data) => {
+          let info = data.toString();
+          let match;
+          if ((match = /Stream #0:0:(.*)$/img.exec(info))) {
+            log.push(match[0]);
+            if (match[1] && match[1].indexOf('stereo') !== -1 && match[1].indexOf('mono') === -1) {
+              log.push('STEREO');
+              return Promise.all([
+                this.detectChannelSilence(tmpDir + inputFile, 0, '-50dB', 0.1),
+                this.detectChannelSilence(tmpDir + inputFile, 1, '-50dB', 0.1)
+              ])
+                .then(silences => {
+                  let channel = null;
+                  if (silences[0] && silences[0].length === 1 && typeof silences[0][0].start !== 'undefined' && typeof silences[0][0].end === 'undefined') {
+                    channel = 0;
+                  } else if (silences[1] && silences[1].length === 1 && typeof silences[1][0].start !== 'undefined' && typeof silences[1][0].end === 'undefined') {
+                    channel = 1;
+                  }
+                  log.push(`DETECTED CHANNEL ${channel}`)
+                  if (channel !== null) {
+                    fs.removeSync(tmpDir + 'taskcomplete.marker');
+                    return processAudio(tmpDir,'convertMono', inputFile, targetFile, channel === 0 ? 1 : 0)
+                      .then(() => {
+                        return this._copyFile(tmpDir + targetFile, target)
+                          .then(() => {
+                            this._removeDirRecursive(tmpDir);
+                            log.push(`PROCESSED ${target}`)
+                            return Promise.resolve(log);
+                          });
+                      })
+                  } else {
+                    this._removeDirRecursive(tmpDir);
+                    return Promise.resolve(log);
+                  }
+                })
+            }
+          }
+          log.push('MONO')
+          this._removeDirRecursive(tmpDir);
+          return Promise.resolve(log);
+        })
+      )
+  }
+  
+  detectChannelSilence(file, channel, level, length) {
+    const tmpDir = tempy.directory()  + '/'
+    const inputFile = 'input'+ path.extname(file)
+    const outputFile = 'output.json'
+    return fs.copy(file, tmpDir + inputFile)
+      .then(
+        () => processAudio(tmpDir,'detectChannelSilence', inputFile, outputFile, level, length, channel)
+      ).then(
+        () => fs.readFile(tmpDir + outputFile).then(  (data) => {
+          let result = [];
+          data = data.toString().trim()
+          //console.log(data)
+          var regExpStart = /silence_start: ([-]?[\d\.]+)/gi
+          var regExpEnd = /silence_end: ([-]?[\d\.]+)/gi
+          var match_start = null;
+          
+          while (match_start = regExpStart.exec(data)) {
+            if (match_start && typeof match_start[1] !== 'undefined') {
+              var match_end = regExpEnd.exec(data);
+              if (match_end && typeof match_end[1] !== 'undefined') {
+                if (match_start[1].indexOf('-') !== -1) {
+                  match_start[1] = 0;
+                }
+                if (match_end[1].indexOf('-') !== -1) {
+                  match_end[1] = 0;
+                }
+                result.push({
+                  start: parseFloat(match_start[1]),
+                  end: parseFloat(match_end[1])
+                });
+              } else {
+                result.push({
+                  start: parseFloat(match_start[1])
+                })
+              }
+            }
+          }
+          this._removeDirRecursive(tmpDir);
+          return Promise.resolve(result);
+        })
+      )
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
