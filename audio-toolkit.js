@@ -398,7 +398,7 @@ class AudioToolkit {
         () => fs.readFile(tmpDir + outputFile).then(  (data) => {
           let info = data.toString();
           let match;
-          if ((match = /Stream #0:0:(.*)$/img.exec(info))) {
+          if ((match = /Stream #0:0.*?Audio:(.*)$/img.exec(info))) {
             log.push(match[0]);
             if (match[1] && match[1].indexOf('stereo') !== -1 && match[1].indexOf('mono') === -1) {
               log.push('STEREO');
