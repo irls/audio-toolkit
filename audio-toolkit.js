@@ -148,6 +148,38 @@ class AudioToolkit {
     // })
     // .then(()=>aud.mergeFiles([partA, partB], destFile))
   }
+  
+  deleteSectionAndConvert(srcFile, fromPos, toPos, destFile, getInfo = false) {
+    if (!srcFile||typeof fromPos === 'undefined' ||!toPos)
+     throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
+    const tmpDir = tempy.directory() + '/'
+    const inputFile = 'input'+ path.extname(srcFile)
+    const outputFile = 'output'+ path.extname(destFile)
+    const processAudioTask = processAudio(tmpDir, 'deleteSectionAndConvert',
+      inputFile, outputFile, parseFloat(fromPos / 1000).toFixed(3), parseFloat(toPos / 1000).toFixed(3), getInfo )
+    const copyFileTask = () => fs.copy(srcFile, tmpDir + inputFile)
+
+    return copyFileTask()
+      .then( () => processAudioTask )
+      .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
+      .then( () => {
+        let result = {
+          destFile: destFile,
+          info: {}
+        }
+        if (getInfo) {
+          let data = fs.readFileSync(`${tmpDir}/out_data`);
+          data = data.toString().trim()
+          //console.log(data)
+          result.info.duration = data.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1');
+          result.info.bitrate = data.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1');
+          result.info.duration_ms = this.time2ms(result.info.duration);
+        }
+        this._removeDirRecursive(tmpDir);
+        return Promise.resolve(result);
+      } );
+  }
 
   // deletes section, resolves to destFile
   // implemented as split + split + merge
