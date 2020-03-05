@@ -121,7 +121,6 @@ class AudioToolkit {
   // deletes section, resolves to destFile
   // implemented as split + split + merge
   deleteSection(srcFile, fromPos, toPos, destFile) {
-    var aud = this
     if (!srcFile||typeof fromPos === 'undefined' ||!toPos)
      throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
@@ -129,15 +128,14 @@ class AudioToolkit {
     const inputFile = 'input'+ path.extname(srcFile)
     const outputFile = 'output'+ path.extname(srcFile)
     const processAudioTask = processAudio(tmpDir, 'deleteSection',
-      inputFile, outputFile, aud.ms2time(fromPos), aud.ms2time(toPos) )
+      inputFile, outputFile, parseFloat(fromPos / 1000).toFixed(3), parseFloat(toPos / 1000).toFixed(3) )
     const copyFileTask = () => fs.copy(srcFile, tmpDir + inputFile)
-    let self = this;
 
     return copyFileTask()
       .then( () => processAudioTask )
       .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
       .then( () => {
-        self._removeDirRecursive(tmpDir);
+        this._removeDirRecursive(tmpDir);
         return Promise.resolve(destFile)
       } )
 

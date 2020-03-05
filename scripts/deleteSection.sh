@@ -11,8 +11,10 @@
 ext="${1##*.}"
 
 # copy the first part to split1 and second to split2
-ffmpeg -i "/data/$1" -acodec copy -t $3 -ss 00:00:00 "/data/split1.$ext"
-ffmpeg -i "/data/$1" -acodec copy -ss $4 "/data/split2.$ext"
+# ffmpeg -i "/data/$1" -acodec copy -t $3 -ss 00:00:00 "/data/split1.$ext"
+# ffmpeg -i "/data/$1" -acodec copy -ss $4 "/data/split2.$ext"
+ffmpeg -hide_banner -i "/data/$1" -af atrim=start=0:end=$3 "/data/split1.$ext"
+ffmpeg -hide_banner -i "/data/$1" -af atrim=start=$4 "/data/split2.$ext"
 
 # create concatlist:  split1 + split2
 echo -e "file /data/split1.$ext\nfile /data/split2.$ext" > "/data/concatlist.txt"
