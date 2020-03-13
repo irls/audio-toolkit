@@ -128,8 +128,11 @@ class AudioToolkit {
     const tmpDir = tempy.directory() + '/'
     const inputFile = 'input'+ path.extname(srcFile)
     const outputFile = 'output'+ path.extname(srcFile)
+    let step = parseInt('1' + '0'.repeat(3));
+    fromPos = Math.round(parseInt(fromPos) / 1000 * step) / step;
+    toPos = Math.round(parseInt(toPos) / 1000 * step) / step;
     const processAudioTask = processAudio(tmpDir, 'deleteSection',
-      inputFile, outputFile, aud.ms2time(fromPos), aud.ms2time(toPos) )
+      inputFile, outputFile, fromPos, toPos )
     const copyFileTask = () => fs.copy(srcFile, tmpDir + inputFile)
     let self = this;
 
@@ -168,15 +171,20 @@ class AudioToolkit {
       .then( () => {
         let result = {
           destFile: destFile,
-          info: {}
+          inputInfo: {},
+          outputInfo: {}
         }
         if (getInfo) {
-          let data = fs.readFileSync(`${tmpDir}/out_data`);
-          data = data.toString().trim()
+          let dataOutput = fs.readFileSync(`${tmpDir}/out_data`).toString().trim();
+          let dataInput = fs.readFileSync(`${tmpDir}/in_data`).toString().trim();
           //console.log(data)
-          result.info.duration = data.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1');
-          result.info.bitrate = data.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1');
-          result.info.duration_ms = this.time2ms(result.info.duration);
+          result.outputInfo.duration = dataOutput.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1');
+          result.outputInfo.bitrate = dataOutput.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1');
+          result.outputInfo.duration_ms = this.time2ms(result.outputInfo.duration);
+          
+          result.inputInfo.duration = dataInput.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1');
+          result.inputInfo.bitrate = dataInput.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1');
+          result.inputInfo.duration_ms = this.time2ms(result.inputInfo.duration);
         }
         this._removeDirRecursive(tmpDir);
         return Promise.resolve(result);
