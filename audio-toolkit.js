@@ -276,21 +276,82 @@ class AudioToolkit {
   // normalize volume levels
   // implemented with docker script normalizeLevels.sh
   // options not yet implemented
-  normalizeLevels(srcFile, destFile, options) {
+  normalizeLevels(srcFile, options = [{k: 'I', v: -25}, {k: 'TP', v: -1}, {k: 'LRA', v: 11}], destFile = false) {
     // TODO: implement some options
-    if (!srcFile) throw "NormalizeLevels warning: srcFile is a required field"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile)})
-    const tmpDir = tempy.directory()  + '/'
-    const inputFile = 'input'+ path.extname(srcFile)
-    const outputFile = 'output'+ path.extname(srcFile)
-    return fs.copy(srcFile, tmpDir + inputFile)
-      .then(
-        () => processAudio(tmpDir,'normalizeLevels', inputFile,outputFile)
-      ).then(
-        () => fs.copy(tmpDir + outputFile, destFile)
-      ).then(
-        () => destFile
-      )
+    if (!srcFile) {
+      return Promise.reject(new Error("NormalizeLevels warning: srcFile is a required field"));
+    }
+    const tmpDir = tempy.directory()  + '/';
+    const inputFile = 'input'+ path.extname(srcFile);
+    const outputFile = 'output'+ path.extname(srcFile);
+    let  params_list = '';
+    options.forEach(opt => {
+      params_list+=`${opt.k}=${opt.v}:`;
+    });
+    params_list = params_list.replace(/\:$/, '');
+    fs.copySync(srcFile, tmpDir + inputFile);
+    return processAudio(tmpDir, 'normalizeLevels',  inputFile, params_list, outputFile)
+      .then(() => {
+        if (destFile) {
+          fs.copySync(tmpDir + outputFile, destFile);
+          return Promise.resolve(destFile);
+        }
+        return Promise.resolve(tmpDir + outputFile);
+      });
+  }
+  
+  detectLevels(srcFile, options = [{k: 'I', v: -25}, {k: 'TP', v: -1}, {k: 'LRA', v: 11}]) {
+    if (!srcFile) {
+      return Promise.reject(new Error("Source file not specified"));
+    }
+    const tmpDir = tempy.directory()  + '/';
+    const inputFile = 'input'+ path.extname(srcFile);
+    let  params_list = '';
+    options.forEach(opt => {
+      params_list+=`${opt.k}=${opt.v}:`;
+    });
+    params_list = params_list.replace(/\:$/, '');
+    fs.copySync(srcFile, tmpDir + inputFile);
+    return processAudio(tmpDir, 'detectLevels', inputFile, params_list)
+      .then(() => {
+        return fs.readFile(`${tmpDir}levels`);
+      })
+      .then((data) => {
+        let result = {};
+        data = data.toString().trim();
+        let parseRegexp = /Parsed.*?(\{[^\}]+\})/gmis;
+        let info = parseRegexp.exec(data);
+        if (info && info[1]) {
+          try {
+            result = JSON.parse(info[1]);
+          } catch (e) {
+            return Promise.resolve({});
+          }
+        }
+        this._removeParentDir(tmpDir + inputFile);
+        return Promise.resolve(result);
+      });
+  }
+  
+  normalizeCompand(srcFile, destFile) {
+    if (!srcFile) {
+      return Promise.reject(new Error('File not specified'));
+    }
+    let dir = tempy.directory() + '/';
+    let ext = path.extname(srcFile);
+    let source = `source${ext}`;
+    let dest = `dest${ext}`;
+    fs.copySync(srcFile, dir + source);
+    return processAudio(dir, 'normalizeCompand', source, dest)
+      .then(() => {
+        if (destFile) {
+          fs.copySync(dir + dest, destFile);
+          this._removeParentDir(dir + source);
+          return Promise.resolve(destFile);
+        } else {
+          return Promise.resolve(dir + dest);
+        }
+      })
   }
 
   // normalize silence length - remove excess inside and standardize edges
