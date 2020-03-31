@@ -298,7 +298,7 @@ class AudioToolkit {
       });
   }
   
-  normalizeCompand(srcFile, destFile) {
+  normalizeCompand(srcFile, destFile, points = '', gain = false) {
     if (!srcFile) {
       return Promise.reject(new Error('File not specified'));
     }
@@ -307,7 +307,13 @@ class AudioToolkit {
     let source = `source${ext}`;
     let dest = `dest${ext}`;
     fs.copySync(srcFile, dir + source);
-    return processAudio(dir, 'normalizeCompand', source, dest)
+    if (!points) {
+      points = '-60/-900|-30/-20|-20/-9|0/-7|20/-3';
+    }
+    if (gain === false) {
+      gain = 0;
+    }
+    return processAudio(dir, 'normalizeCompand', source, `"${points}"`, gain, dest)
       .then(() => {
         if (destFile) {
           fs.copySync(dir + dest, destFile);
