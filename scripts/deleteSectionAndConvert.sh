@@ -28,15 +28,17 @@ else
 ffmpeg -hide_banner -f concat -safe 0 -i "/data/concatlist.txt" -c copy "/data/$2"
 echo "ffmpeg -hide_banner -f concat -safe 0 -i /data/concatlist.txt -c copy /data/$2"
 fi
-if [[ $5 ]]
-then
-ffmpeg -hide_banner -i "/data/$1" 2>&1 | grep "Duration" > "/data/in_data"
-ffmpeg -hide_banner -i "/data/$2.$ext" 2>&1 | grep "Duration" > "/data/out_data"
-fi
+
 if [[ "$ext" != "$extTarget" ]]
 then
 ffmpeg -hide_banner -i "/data/$2.$ext" -ar 44100 "/data/$2.$extTarget";
 mv "/data/$2.$extTarget" "/data/$2"
+fi
+
+if [[ $5 ]]
+then
+ffmpeg -hide_banner -i "/data/$1" 2>&1 | grep "Duration" > "/data/in_data"
+ffmpeg -hide_banner -i "/data/$2" 2>&1 | grep "Duration" > "/data/out_data"
 fi
 
 
