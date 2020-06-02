@@ -7,6 +7,7 @@
 # $2 outputFile: The filename for the audio before the split position.
 # $3 fromPos: The position at which the source file should be split.
 # $4 toPos: The position at which the source file should be split.
+# $5 outputInfo: Get result meta or not.
 
 ext="${1##*.}"
 
@@ -21,6 +22,12 @@ echo -e "file /data/split1.$ext\nfile /data/split2.$ext" > "/data/concatlist.txt
 
 # merge together
 ffmpeg -f concat -safe 0 -i "/data/concatlist.txt" -c copy "/data/$2"
+
+if [[ $5 ]]
+then
+ffmpeg -hide_banner -i "/data/$1" 2>&1 | grep "Duration" > "/data/in_data"
+ffmpeg -hide_banner -i "/data/$2" 2>&1 | grep "Duration" > "/data/out_data"
+fi
 
 
 

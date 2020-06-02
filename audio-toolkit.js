@@ -120,7 +120,7 @@ class AudioToolkit {
 
   // deletes section, resolves to destFile
   // implemented as split + split + merge
-  deleteSection(srcFile, fromPos, toPos, destFile) {
+  deleteSection(srcFile, fromPos, toPos, destFile, getInfo = false) {
     if (!srcFile||typeof fromPos === 'undefined' ||!toPos)
      throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
     if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
@@ -128,15 +128,35 @@ class AudioToolkit {
     const inputFile = 'input'+ path.extname(srcFile)
     const outputFile = 'output'+ path.extname(srcFile)
     const processAudioTask = processAudio(tmpDir, 'deleteSection',
-      inputFile, outputFile, parseFloat(fromPos / 1000).toFixed(3), parseFloat(toPos / 1000).toFixed(3) )
+      inputFile, outputFile, parseFloat(fromPos / 1000).toFixed(3), parseFloat(toPos / 1000).toFixed(3), getInfo )
     const copyFileTask = () => fs.copy(srcFile, tmpDir + inputFile)
 
     return copyFileTask()
       .then( () => processAudioTask )
       .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
       .then( () => {
-        this._removeDirRecursive(tmpDir);
-        return Promise.resolve(destFile)
+        let result = {
+          destFile: destFile,
+          inputInfo: {},
+          outputInfo: {}
+        }
+        if (getInfo) {
+          let dataOutput = fs.readFileSync(`${tmpDir}/out_data`).toString().trim();
+          let dataInput = fs.readFileSync(`${tmpDir}/in_data`).toString().trim();
+          //console.log(data)
+          result.outputInfo.duration = dataOutput.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1');
+          result.outputInfo.bitrate = dataOutput.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1');
+          result.outputInfo.duration_ms = this.time2ms(result.outputInfo.duration);
+          
+          result.inputInfo.duration = dataInput.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1');
+          result.inputInfo.bitrate = dataInput.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1');
+          result.inputInfo.duration_ms = this.time2ms(result.inputInfo.duration);
+          this._removeDirRecursive(tmpDir);
+          return Promise.resolve(result);
+        } else {
+          this._removeDirRecursive(tmpDir);
+          return Promise.resolve(destFile);
+        }
       } )
 
     // var partA, partB
