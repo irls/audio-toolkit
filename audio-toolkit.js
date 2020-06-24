@@ -605,7 +605,7 @@ class AudioToolkit {
   }
   
   getIntervals(inputFile, positions, outputFile) {
-    console.log(`getIntervals ${inputFile}`)
+    //console.log(`getIntervals ${inputFile}`)
     const tmpDir = tempy.directory()  + '/'
     const sourceFile = 'input'+ path.extname(inputFile)
     //const outputFile = 'output.json'
@@ -620,7 +620,7 @@ class AudioToolkit {
     });
     positionsString = positionsString.replace(/\|$/, '');
     fs.mkdirSync(outputDir)
-    console.log(`copySync ${inputFile}, ${tmpDir + sourceFile}`)
+    //console.log(`copySync ${inputFile}, ${tmpDir + sourceFile}`)
     fs.copySync(inputFile, tmpDir + sourceFile);
     return processAudio(tmpDir, 'getIntervals', sourceFile, `"${positionsString}"`)
       .then(() => {
