@@ -603,6 +603,43 @@ class AudioToolkit {
         })
       )
   }
+  
+  getIntervals(inputFile, positions, outputFile) {
+    const tmpDir = tempy.directory()  + '/'
+    const sourceFile = 'input'+ path.extname(inputFile)
+    //const outputFile = 'output.json'
+    const outputDir = `${tmpDir}output`;
+    positions.forEach(s => {
+      s[0] = parseFloat(s[0] / 1000).toFixed(3);
+      s[1] = parseFloat(s[1] / 1000).toFixed(3);
+    });
+    let positionsString = '';
+    positions.forEach(p => {
+      positionsString+=`${p}|`;
+    });
+    positionsString = positionsString.replace(/\|$/, '');
+    fs.mkdirSync(outputDir)
+    fs.copySync(inputFile, tmpDir + sourceFile);
+    return processAudio(tmpDir, 'getIntervals', sourceFile, `"${positionsString}"`)
+      .then(() => {
+        let files = fs.readdirSync(`${outputDir}`).filter(file => {
+          console.log('CHECK FILE', file);
+          return file.match(/(flac|m4a)$/ig);
+        });
+        outputFile.forEach((of, i) => {
+          Object.keys(of).forEach(ext => {
+            let _f = files.find(f => {
+              return f === `${i}.${ext}`;
+            });
+            if (_f) {
+              fs.moveSync(`${outputDir}/${_f}`, of[ext], {overwrite: true});
+            }
+          })
+        });
+        this._removeDirRecursive(tmpDir);
+        return Promise.resolve(files);
+      });
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
