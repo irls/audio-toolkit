@@ -642,6 +642,39 @@ class AudioToolkit {
         return Promise.resolve(files);
       });
   }
+  
+  volumedetect(file) {
+    
+    const tmpDir = tempy.directory()  + '/';
+    return processAudio([
+      {
+        src: tmpDir,
+        target: '/data'
+      },
+      {
+        src: path.dirname(file),
+        target: '/data/audio'
+      }
+    ], 'volumedetect', path.basename(file))
+      .then(() => {
+        //console.log('readFile', `${tmpDir}output`)
+        return fs.readFile(`${tmpDir}output`).then((data) => {
+          //console.log(data);
+          let result = {}
+          data = data.toString().trim();
+          //console.log(data)
+          ['n_samples', 'mean_volume', 'max_volume', 'histogram_.*?'].forEach(field => {
+            let match = null;
+            let rg = new RegExp(`(${field}): (.*)`, 'img');
+            while ((match = rg.exec(data))) {
+              result[match[1]] = parseInt(match[2]);
+            }
+          });
+          this._removeDirRecursive(tmpDir);
+          return Promise.resolve(result);
+        })
+      })
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
