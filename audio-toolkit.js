@@ -273,24 +273,33 @@ class AudioToolkit {
   getMetaData(srcFile) {
     if (!srcFile) throw "GetMetaData warning: srcFile is a required field"
     const tmpDir = tempy.directory()  + '/'
-    const inputFile = 'input'+ path.extname(srcFile)
+    //const inputFile = 'input'+ path.extname(srcFile)
+    fs.ensureDirSync(tmpDir);
     const outputFile = 'output.json'
     const aud = this
-    return fs.copy(srcFile, tmpDir + inputFile)
-      .then(
-        () => processAudio(tmpDir,'getMetaData', inputFile, outputFile)
-      ).then(
-        () => fs.readFile(tmpDir + outputFile).then(  (data) => {
-          let result = {}
-          data = data.toString().trim()
-          //console.log(data)
-          result.duration = data.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1')
-          result.bitrate = data.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1')
-          result.duration_ms = aud.time2ms(result.duration)
-          aud._removeDirRecursive(tmpDir);
-          return result
-        })
-      )
+    //return fs.copy(srcFile, tmpDir + inputFile)
+      //.then(
+    return processAudio([
+          {
+            src: tmpDir,
+            target: '/data'
+          },
+          {
+            src: path.dirname(srcFile),
+            target: '/audio'
+          }
+        ],'getMetaData', `"${path.basename(srcFile)}"`, outputFile)
+      .then(() => {
+        let data = fs.readFileSync(tmpDir + outputFile);
+        let result = {}
+        data = data.toString().trim()
+        //console.log(data)
+        result.duration = data.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1')
+        result.bitrate = data.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1')
+        result.duration_ms = aud.time2ms(result.duration)
+        aud._removeDirRecursive(tmpDir);
+        return Promise.resolve(result);
+      })
   }
 
   // normalize volume levels

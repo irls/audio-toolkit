@@ -10,7 +10,7 @@
 # fetch metadata to output file
 # ffmpeg -i "/data/$1" -f "/data/$2"
 
-ffmpeg -i "/data/$1" 2>&1 | grep "Duration" > "/data/$2"
+ffmpeg -i "/audio/$1" 2>&1 | grep "Duration" > "/data/$2"
 
 
 # mark this task complete
