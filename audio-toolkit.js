@@ -786,10 +786,19 @@ function processAudio(sharedDir, scriptName, ...args){
     // console.log('Exec: '+ cmd)
 
     // A hack to resolve when the script is done
-    chokidar.watch(sharedDir+'taskcomplete.marker').on('add', () => {
+    const watcher = chokidar.watch(sharedDir+'taskcomplete.marker');
+    
+    let timeoutCheck = setTimeout(() => {// timeout for checking complete file, 2 minutes
+      watcher.close();
+      return reject(new Error('TIMEOUT'));
+    }, 2 * 60 * 1000);
+    
+    watcher.on('add', () => {
       //  console.log('Step 3: file resolver -- marker file found')
+      clearTimeout(timeoutCheck);
+      watcher.close();
       return resolve(true)
-    })
+    });
 
     //call the docker script
     exec(cmd, {maxBuffer: 1024 * 5000}, (error, stdout, stderr) => { // never fires
