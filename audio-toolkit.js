@@ -788,10 +788,10 @@ function processAudio(sharedDir, scriptName, ...args){
     // A hack to resolve when the script is done
     const watcher = chokidar.watch(sharedDir+'taskcomplete.marker');
     
-    let timeoutCheck = setTimeout(() => {// timeout for checking complete file, 2 minutes
+    let timeoutCheck = setTimeout(() => {// timeout for checking complete file, 15 minutes
       watcher.close();
       return reject(new Error('TIMEOUT'));
-    }, 2 * 60 * 1000);
+    }, 15 * 60 * 1000);
     
     watcher.on('add', () => {
       //  console.log('Step 3: file resolver -- marker file found')
