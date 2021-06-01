@@ -684,6 +684,28 @@ class AudioToolkit {
         })
       })
   }
+  
+  convertAndNormalize(file, output, normalization = 'f=150:c=1:b=1', ba = '40k', ar = '22050', noiseRemoval = true) {
+    const tmpDir = tempy.directory()  + '/';
+    return processAudio([
+      {
+        src: tmpDir,
+        target: '/data'
+      },
+      {
+        src: path.dirname(file),
+        target: '/data/audio'
+      }
+    ], 'convertAndNormalize', path.basename(file), output, normalization, ba, ar, noiseRemoval)
+      .then(() => {
+        this._removeDirRecursive(tmpDir);
+        return Promise.resolve();
+      })
+      .catch(err => {
+        this._removeDirRecursive(tmpDir);
+        return Promise.reject(err);
+      })
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
