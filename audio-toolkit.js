@@ -706,6 +706,53 @@ class AudioToolkit {
         return Promise.reject(err);
       })
   }
+  
+  /*compressAndNormalize(file, output) {
+    const tmpDir = tempy.directory()  + '/';
+    return processAudio([
+      {
+        src: tmpDir,
+        target: '/data'
+      },
+      {
+        src: path.dirname(file),
+        target: '/data/audio'
+      }
+    ], 'convertAndNormalize', path.basename(file), output)
+      .then(() => {
+        this._removeDirRecursive(tmpDir);
+        return Promise.resolve();
+      })
+      .catch(err => {
+        this._removeDirRecursive(tmpDir);
+        return Promise.reject(err);
+      })
+  }*/
+  
+  compressAndNormalize(file, output, normalization = 'f=150:c=1:b=1', ba = '40k', ar = '22050', noiseRemoval = true, volumeFilter = '') {
+    const tmpDir = tempy.directory()  + '/';
+    console.time('compressAndNormalize');
+    //console.log(arguments);
+    return processAudio([
+      {
+        src: tmpDir,
+        target: '/data'
+      },
+      {
+        src: path.dirname(file),
+        target: '/data/audio'
+      }
+    ], 'compressAndNormalize', path.basename(file), output, `"${normalization}"`, `"${ba}"`, `"${ar}"`, `"${noiseRemoval}"`, `"${volumeFilter}"`)
+      .then(() => {
+        console.timeEnd('compressAndNormalize');
+        this._removeDirRecursive(tmpDir);
+        return Promise.resolve();
+      })
+      .catch(err => {
+        this._removeDirRecursive(tmpDir);
+        return Promise.reject(err);
+      })
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
