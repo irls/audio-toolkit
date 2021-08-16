@@ -731,7 +731,7 @@ class AudioToolkit {
   
   compressAndNormalize(file, output, normalization = 'f=150:c=1:b=1', ba = '40k', ar = '22050', noiseRemoval = true, volumeFilter = '') {
     const tmpDir = tempy.directory()  + '/';
-    console.time('compressAndNormalize');
+    console.time('compressAndNormalize ' + file);
     //console.log(arguments);
     return processAudio([
       {
@@ -744,7 +744,7 @@ class AudioToolkit {
       }
     ], 'compressAndNormalize', path.basename(file), output, `"${normalization}"`, `"${ba}"`, `"${ar}"`, `"${noiseRemoval}"`, `"${volumeFilter}"`)
       .then(() => {
-        console.timeEnd('compressAndNormalize');
+        console.timeEnd('compressAndNormalize ' + file);
         this._removeDirRecursive(tmpDir);
         return Promise.resolve();
       })

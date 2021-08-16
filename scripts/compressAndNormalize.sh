@@ -44,8 +44,9 @@ fi
 
 if [[ $7 ]]
 then
-rm filename
+rm "/data/audio/$filename"
 fi
+chmod 777 "/data/audio/$2"
 
 # mark this task complete
 touch "/data/taskcomplete.marker"
