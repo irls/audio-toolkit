@@ -753,6 +753,23 @@ class AudioToolkit {
         return Promise.reject(err);
       })
   }
+  
+  generateSilences(start, step, end, extension = 'flac') {
+    const tmpDir = tempy.directory()  + '/';
+    return processAudio([
+      {
+        src: tmpDir,
+        target: '/data'
+      }
+    ], 'generateSilences', start, step, end, extension)
+      .then(() => {
+        let files = [];
+        fs.readdirSync(tmpDir).forEach(f => {
+          files.push(`${tmpDir}${f}`);
+        });
+        return Promise.resolve(files);
+      });
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
