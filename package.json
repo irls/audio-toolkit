@@ -4,7 +4,7 @@
   "main": "audio-toolkit.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chadananda/audio-toolkit.git"
+    "url": "git+https://github.com/irls/audio-toolkit.git"
   },
   "scripts": {
     "test": "mocha",
