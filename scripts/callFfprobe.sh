@@ -3,11 +3,12 @@
 
 # Make an ffprobe call with specified params.
 #
-# $1 inputParams: string with command details.
+# $1 inputFile: file path.
+# $2 inputParams: string with command details.
 
-
-ffprobe $1
+echo "ffprobe -i \"$1\" $2"
+ffprobe -i "$1" $2
 
 
 # mark this task complete
-touch "/data/taskcomplete.marker"
+#touch "/data/taskcomplete.marker"
