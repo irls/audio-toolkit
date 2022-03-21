@@ -10,8 +10,11 @@
 if [[ $3 ]]
 then
 ffmpeg -hide_banner -i "$1" $2 "$3"
-else
+elif [[ $2 ]]
+then
 ffmpeg -hide_banner -i "$1" $2
+else
+ffmpeg $1
 fi
 
 
