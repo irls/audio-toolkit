@@ -8,5 +8,4 @@
 # $3 parameters: optional, additional parameters
 #
 
-echo "ffmpeg -hide_banner -i /data/$1 -c:a libfdk_aac $3 /data/$2"
 ffmpeg -hide_banner -y -i "/data/$1" -c:a libfdk_aac $3 "/data/$2"

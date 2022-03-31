@@ -21,9 +21,7 @@ fi
 
 if [[ $3 && $4 ]]
 then
-echo "ffmpeg -hide_banner -y -i /data/$1 -af asendcmd=$3 afftdn sn start,asendcmd=$4 afftdn sn stop, $parameters /data/$2"
 ffmpeg -hide_banner -y -i "/data/$1" -af "asendcmd=$3 afftdn sn start,asendcmd=$4 afftdn sn stop, $parameters" "/data/$2"
 else
-echo "ffmpeg -hide_banner -y -i /data/$1 -af $parameters /data/$2"
 ffmpeg -hide_banner -y -i "/data/$1" -af "$parameters" "/data/$2"
 fi
