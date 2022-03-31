@@ -1,4 +1,4 @@
-FROM jrottenberg/ffmpeg:3.4-alpine
+FROM jrottenberg/ffmpeg:4.3-alpine
 
 MAINTAINER Daniel Jones <dan@firm-foundation.org>
 
