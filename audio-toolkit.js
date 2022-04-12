@@ -770,6 +770,57 @@ class AudioToolkit {
         return Promise.resolve(files);
       });
   }
+  
+  removeNoiseAnlmdn(source, target, command = "") {
+    return processAudio([
+      {
+        src: path.dirname(source),
+        target: '/data'
+      }
+    ], 'removeNoiseAnlmdn', path.basename(source), path.basename(target), `"${command}"`)
+      .then(() => {
+        return Promise.resolve(target);
+      })
+      .catch(err => {
+        return Promise.reject(err);
+      });
+  }
+  
+  compressLibfdk(source, target, command = "") {
+    return processAudio([
+      {
+        src: path.dirname(source),
+        target: '/data'
+      }
+    ], 'compressLibfdk', path.basename(source), path.basename(target), `"${command}"`)
+      .then(() => {
+        return Promise.resolve(target);
+      })
+      .catch(err => {
+        return Promise.reject(err);
+      });
+  }
+  
+  removeNoiseAfftdn(source, target, command = "", detectedSilence = []) {
+    let positionsStart = '';
+    let positionsEnd = '';
+    if (detectedSilence) {
+      positionsStart = detectedSilence[0].start;
+      positionsEnd = detectedSilence[0].end;
+    }
+    return processAudio([
+      {
+        src: path.dirname(source),
+        target: '/data'
+      }
+    ], 'removeNoiseAfftdn', path.basename(source), path.basename(target), positionsStart, positionsEnd, `"${command}"`)
+      .then(() => {
+        return Promise.resolve();
+      })
+      .catch(err => {
+        return Promise.reject(err);
+      });
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
