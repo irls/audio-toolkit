@@ -822,6 +822,69 @@ class AudioToolkit {
       });
   }
 
+  /**
+   * Get audio metadata like genre, atrist, album, etc.
+   * @param String file - path to audio file
+   * @returns Object
+   */
+  getAudioMeta(file) {
+    let sourceDir = path.dirname(file);
+    let infoFilename = `/_${path.basename(file)}_metadata_${Date.now()}`;
+    let targetPath = `${sourceDir}/${infoFilename}`;
+    return processAudio([
+      {
+        src: `"${sourceDir}"`, 
+        target: '/data'
+      }
+    ], 'getAudioMeta', `"${path.basename(file)}"`, `"${infoFilename}"`)
+      .then(() => {
+        if (fs.existsSync(targetPath)) {
+          let data = fs.readFileSync(targetPath);
+          let regExp = new RegExp('^(\\w+)=([\\s\\S]*?)$', 'img');
+          let match = '';
+          let response = {};
+          while ((match = regExp.exec(data))) {
+            if (match && match[1]) {
+              response[match[1]] = match[2];
+            }
+          }
+          fs.unlinkSync(targetPath);
+          return response;
+        }
+        return Promise.reject(new Error('File not found'));
+      })
+      .catch(err => {
+        return {};
+      });
+  }
+  
+  setAudioMeta(file, metadata) {
+    let sourceDir = path.dirname(file);
+    let sourceFilename = path.basename(file);
+    let infoFilename = `_${sourceFilename}_metadata_${Date.now()}`;
+    let targetFilename = sourceFilename + '_metadata_set' + path.extname(file);
+    let data = ';FFMETADATA1';
+    Object.keys(metadata).forEach(k => {
+      data+=`
+${k}=${metadata[k]}`;
+    });
+    fs.outputFileSync(sourceDir + '/' + infoFilename, data);
+    return processAudio([
+      {
+        src: `"${sourceDir}"`, 
+        target: '/data'
+      }
+    ], 'setAudioMeta', `"${sourceFilename}"`, `"${infoFilename}"`, `"${targetFilename}"`)
+      .then(() => {
+        fs.moveSync(sourceDir + '/' + targetFilename, sourceDir + '/' + sourceFilename, {overwrite: true});
+        fs.unlinkSync(sourceDir + '/' + infoFilename);
+        return {};
+      })
+      .catch(err => {
+        return Promise.reject(err);
+      });
+  }
+
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
      else console.log(` Directory "${directory}" not found`)
