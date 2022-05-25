@@ -291,12 +291,36 @@ class AudioToolkit {
         ],'getMetaData', `"${path.basename(srcFile)}"`, outputFile)
       .then(() => {
         let data = fs.readFileSync(tmpDir + outputFile);
-        let result = {}
+        let result = {
+          duration: '',
+          bitrate: '',
+          duration_ms: null,
+          stereo: false, 
+          mono: false, 
+          streamInfo: ''
+        };
         data = data.toString().trim()
         //console.log(data)
-        result.duration = data.replace(/.*?Duration:\s([0-9.:]+?)\,.*/ig, '$1')
-        result.bitrate = data.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1')
-        result.duration_ms = aud.time2ms(result.duration)
+        let match;
+        if ((match = /.*?Duration:\s([0-9.:]+?)\,.*/igm.exec(data))) {
+          if (match && match[1]) {
+            result.duration = match[1];
+            result.duration_ms = aud.time2ms(result.duration);
+          }
+        }
+        if ((match = /.*?bitrate:\s(.*?)\skb\/s.*/igm.exec(data))) {
+          if (match[1]) {
+            result.bitrate = match[1];
+          }
+        }
+        if ((match = /Stream #0:0.*?Audio:(.*)$/img.exec(data))) {
+          result.streamInfo = match[0];
+          if (match[1] && match[1].indexOf('stereo') !== -1 && match[1].indexOf('mono') === -1) {
+            result.stereo = true;
+          } else {
+            result.mono = true;
+          }
+        }
         aud._removeDirRecursive(tmpDir);
         return Promise.resolve(result);
       })
@@ -523,51 +547,65 @@ class AudioToolkit {
     const targetFile = 'output.' + file.split('.').pop();
     let log = [];
     return fs.copy(file, tmpDir + inputFile)
-      .then(
-        () => processAudio(tmpDir,'fileInfo', inputFile, outputFile)
-      ).then(
-        () => fs.readFile(tmpDir + outputFile).then(  (data) => {
-          let info = data.toString();
-          let match;
-          if ((match = /Stream #0:0.*?Audio:(.*)$/img.exec(info))) {
-            log.push(match[0]);
-            if (match[1] && match[1].indexOf('stereo') !== -1 && match[1].indexOf('mono') === -1) {
-              log.push('STEREO');
-              return Promise.all([
-                this.detectChannelSilence(tmpDir + inputFile, 0, '-50dB', 0.1),
-                this.detectChannelSilence(tmpDir + inputFile, 1, '-50dB', 0.1)
-              ])
-                .then(silences => {
-                  let channel = null;
-                  if (silences[0] && silences[0].length === 1 && typeof silences[0][0].start !== 'undefined' && typeof silences[0][0].end === 'undefined') {
+      .then(() => {
+        return this.getMetaData(tmpDir + inputFile)
+      }).then((info) => {
+        log.push(info.streamInfo);
+        if (info.stereo) {
+          log.push('STEREO');
+          return Promise.all([
+            this.detectChannelSilence(tmpDir + inputFile, 0, '-50dB', 0.1),
+            this.detectChannelSilence(tmpDir + inputFile, 1, '-50dB', 0.1)
+          ])
+            .then(silences => {
+              let [silencesLeft, silencesRight] = silences;
+              let channel = null;
+              if (silencesLeft && silencesLeft.length === 1) {
+                if (typeof silencesLeft[0].start !== 'undefined') {
+                  if (typeof silencesLeft[0].end === 'undefined') {
                     channel = 0;
-                  } else if (silences[1] && silences[1].length === 1 && typeof silences[1][0].start !== 'undefined' && typeof silences[1][0].end === 'undefined') {
-                    channel = 1;
-                  }
-                  log.push(`DETECTED CHANNEL ${channel}`)
-                  if (channel !== null) {
-                    fs.removeSync(tmpDir + 'taskcomplete.marker');
-                    return processAudio(tmpDir,'convertMono', inputFile, targetFile, channel === 0 ? 1 : 0)
-                      .then(() => {
-                        return this._copyFile(tmpDir + targetFile, target)
-                          .then(() => {
-                            this._removeDirRecursive(tmpDir);
-                            log.push(`PROCESSED ${target}`)
-                            return Promise.resolve(log);
-                          });
-                      })
                   } else {
-                    this._removeDirRecursive(tmpDir);
-                    return Promise.resolve(log);
+                    let pauseDuration = parseInt((silencesLeft[0].end - silencesLeft[0].start) * 1000);// in milliseconds
+                    if (Math.abs(pauseDuration - info.duration_ms) < 10) {
+                      channel = 0;
+                    }
                   }
-                })
-            }
-          }
-          log.push('MONO')
-          this._removeDirRecursive(tmpDir);
-          return Promise.resolve(log);
-        })
-      )
+                }
+              }
+              if (channel === null && silencesRight && silencesRight.length === 1) {
+                if (typeof silencesRight[0].start !== 'undefined') {
+                  if (typeof silencesRight[0].end === 'undefined') {
+                    channel = 0;
+                  } else {
+                    let pauseDuration = parseInt((silencesRight[0].end - silencesRight[0].start) * 1000);// in milliseconds
+                    if (Math.abs(pauseDuration - info.duration_ms) < 10) {
+                      channel = 1;
+                    }
+                  }
+                }
+              }
+              log.push(`DETECTED CHANNEL ${channel}`)
+              if (channel !== null) {
+                fs.removeSync(tmpDir + 'taskcomplete.marker');
+                return processAudio(tmpDir,'convertMono', inputFile, targetFile, channel === 0 ? 1 : 0)
+                  .then(() => {
+                    return this._copyFile(tmpDir + targetFile, target)
+                      .then(() => {
+                        this._removeDirRecursive(tmpDir);
+                        log.push(`PROCESSED ${target}`)
+                        return Promise.resolve(log);
+                      });
+                  })
+              } else {
+                this._removeDirRecursive(tmpDir);
+                return Promise.resolve(log);
+              }
+            })
+        }
+        log.push('MONO')
+        this._removeDirRecursive(tmpDir);
+        return Promise.resolve(log);
+      })
   }
   
   detectChannelSilence(file, channel, level, length) {
