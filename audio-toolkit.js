@@ -11,10 +11,19 @@ const directoryExists = require('directory-exists')
 const chokidar = require('chokidar')
 
 
+let logger = false;
+//let writeStream = false;
+
+
 
 class AudioToolkit {
-  constructor() {
+  constructor(logPath) {
     // in case we need some instantiated object data
+    if (logPath) {
+      logger = logPath;
+      fs.existsSync(logger);
+      //writeStream = fs.createWriteStream(logger);
+    }
   }
 
   // resolves to an array of converted files
@@ -988,6 +997,7 @@ function processAudio(sharedDir, scriptName, ...args){
     // A hack to resolve when the script is done
     const watcher = chokidar.watch(sharedDir+'taskcomplete.marker');
     
+    let scriptTime = Date.now();
     let timeoutCheck = setTimeout(() => {// timeout for checking complete file, 60 minutes
       watcher.close();
       return reject(new Error('TIMEOUT'));
@@ -995,6 +1005,7 @@ function processAudio(sharedDir, scriptName, ...args){
     
     watcher.on('add', () => {
       //  console.log('Step 3: file resolver -- marker file found')
+      logRequest(scriptTime, sharedDir, scriptName, ...args);
       clearTimeout(timeoutCheck);
       watcher.close();
       return resolve(true)
@@ -1003,10 +1014,70 @@ function processAudio(sharedDir, scriptName, ...args){
     //call the docker script
     exec(cmd, {maxBuffer: 1024 * 5000}, (error, stdout, stderr) => { // never fires
       //  console.log('Step 3: docker completed, this is not usually being called')
+      logRequest(scriptTime, sharedDir, scriptName, ...args);
       if (error) {
         return reject(error);
       }
       return resolve(true);
     })
   })
+}
+
+function logRequest(startTime, sharedDir, scriptName, ...args) {
+  
+  let scriptTime = trackTimeDiff(startTime);
+  if (logger) {
+    let sourceFile = "";
+    let dirs;
+    if (Array.isArray(sharedDir)) {
+      dirs = [];
+      sharedDir.forEach(dir => {
+        dirs.push(dir.src);
+      });
+    } else {
+      dirs = [sharedDir];
+    }
+    dirs.forEach(dir => {
+      args.forEach(arg => {
+        if (fs.existsSync(dir + '/' + arg) && ['.wav', '.flac', '.m4a'].includes(path.extname(dir + '/' + arg))) {
+          sourceFile = dir + '/' + arg;
+        }
+      });
+    });
+    let size = null;
+    if (sourceFile) {
+      let statFile = fs.statSync(sourceFile);
+      size = parseFloat(parseFloat(statFile.size / 1024).toFixed(2)) + 'kB'
+    }
+    let dt = new Date();
+    let stats = [
+      `"[${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDate()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}]"`,
+      `"${scriptName}"`,
+      `"${scriptTime}"`,
+      `"${size}"`,
+      `"${sourceFile}"`
+    ];
+    args.forEach(arg => {
+      stats.push(`"${(arg + "").replace(/\"/g, '')}"`);
+    });
+    fs.appendFileSync(logger, stats.join(',') + ";\n");
+    //writeStream.write(stats.join(',') + ";\n");
+  }
+}
+
+function trackTimeDiff(startTime) {
+  let endTime = Date.now();
+   let seconds = parseInt((endTime - startTime) / 1000);
+   let minutes;
+   let hours;
+   if (seconds > 60) {
+     minutes = parseInt(seconds / 60);
+     seconds = seconds % 60;
+
+   }
+   if (minutes > 60) {
+     hours = parseInt(minutes / 60);
+     minutes = minutes % 60;
+   }
+   return (hours ? `${hours}h:` : '') + (typeof minutes === 'undefined' ? '' : `${minutes}m:`) + (`${seconds}s`);
 }
