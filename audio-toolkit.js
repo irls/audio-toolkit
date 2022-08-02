@@ -50,6 +50,27 @@ class AudioToolkit {
         return paths
       })
   }
+  
+  // convert file format with convertFormatSingle.sh
+  convertFormatSingle(srcFile, destFile) {
+    // console.log('convertFormat', srcFiles, toFormat)
+    if (!srcFile || !destFile) {
+      throw "ConvertFormat warning: srcFile & toFormat are required fields"
+    }
+    return processAudio([
+      {
+        src: path.dirname(srcFile),
+        target: '/data'
+      }
+    ],'convertFormatSingle', path.basename(srcFile), path.basename(destFile))
+      .then(() => {
+        return destFile;
+      })
+      .catch(err => {
+        console.log(`convertFormatSingle err`, err.message, err.stack);
+        return Promise.reject(err);
+      });
+  }
 
   // joins files, resolves to destFile
   // implemented with docker script mergeFiles.sh
