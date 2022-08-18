@@ -57,6 +57,9 @@ class AudioToolkit {
     if (!srcFile || !destFile) {
       throw "ConvertFormat warning: srcFile & toFormat are required fields"
     }
+    if (!fs.existsSync(destFile)) {// if file does not exists - create it with current user's privileges
+      fs.openSync(destFile, 'w');
+    }
     return processAudio([
       {
         src: path.dirname(srcFile),
