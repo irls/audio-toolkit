@@ -955,6 +955,19 @@ ${k}=${metadata[k]}`;
         return Promise.reject(err);
       });
   }
+  
+  fadeInFadeOutPercent(inputFile, outputFile, start, end, length, percent) {
+    let source = path.basename(inputFile);
+    let sourceDir = path.dirname(inputFile);
+    let target = path.basename(outputFile);
+    
+    return processAudio([
+      {
+        src: `"${sourceDir}"`,
+        target: '/data'
+      }
+    ], 'fadeInFadeOutPercent', `"/data/${source}"`, `"/data/${target}"`, start, end, length, percent);
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
