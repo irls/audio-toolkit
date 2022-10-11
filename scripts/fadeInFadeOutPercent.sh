@@ -36,6 +36,13 @@ middleLength=$(printf %.2f $(expr $middleEnd-$middleStart | bc -l))
 middleLength=$(printf %d $(expr $middleLength*100 | bc -l))
 tmpDir="/data/fadeTmp"
 
+checkRightFadeStart=$(printf %d $(expr $rightFadeStart*100 | bc -l))
+
+if [ $checkRightFadeStart -lt 0 ]
+then
+rightFadeStart=0
+fi
+
 echo "delta $delta"
 echo "leftEnd $leftEnd"
 echo "rightStart $rightStart"
