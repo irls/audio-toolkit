@@ -23,24 +23,31 @@ ext="${1##*.}"
 fadePart=$(expr 100 - $percent | bc)
 echo "fadePart $fadePart"
 echo "$fadeLength * $percent / $fadePart"
-delta=$(printf %.1f $(expr $fadeLength*$percent/$fadePart | bc -l))
+delta=$(printf %.2f $(expr $fadeLength*$percent/$fadePart | bc -l))
 
-leftEnd=$(printf %.1f $(expr $startPos+$fadeLength | bc -l))
-rightStart=$(printf %.1f $(expr $endPos-$fadeLength | bc -l))
-rightFadeStart=$(printf %.1f $(expr $endPos-$fadeLength-$delta | bc -l))
-middleStart=$(printf %.1f $(expr $startPos+$fadeLength | bc -l))
-middleEnd=$(printf %.1f $(expr $endPos-$fadeLength | bc -l))
-fadeDuration=$(printf %.1f $(expr $fadeLength+$delta | bc -l))
+leftEnd=$(printf %.2f $(expr $startPos+$fadeLength | bc -l))
+rightStart=$(printf %.2f $(expr $endPos-$fadeLength | bc -l))
+rightFadeStart=$(printf %.2f $(expr $endPos-$fadeLength-$delta | bc -l))
+middleStart=$(printf %.2f $(expr $startPos+$fadeLength | bc -l))
+middleEnd=$(printf %.2f $(expr $endPos-$fadeLength | bc -l))
+fadeDuration=$(printf %.2f $(expr $fadeLength+$delta | bc -l))
 middleVolume=$(printf %.2f $(expr $percent/100 | bc -l))
 middleLength=$(printf %.2f $(expr $middleEnd-$middleStart | bc -l))
 middleLength=$(printf %d $(expr $middleLength*100 | bc -l))
 tmpDir="/data/fadeTmp"
 
-checkRightFadeStart=$(printf %d $(expr $rightFadeStart*100 | bc -l))
+checkRightFadeStart=$(echo "$rightFadeStart < 0" | bc -l)
 
-if [ $checkRightFadeStart -lt 0 ]
+if [ $checkRightFadeStart -eq 1 ]
 then
 rightFadeStart=0
+fi
+
+checkFadeLength=$(echo "$fadeDuration <= 0" | bc -l)
+
+if [ $checkFadeLength -eq 1 ]
+then
+fadeDuration=0.01
 fi
 
 echo "delta $delta"
