@@ -50,6 +50,8 @@ then
 fadeDuration=0.01
 fi
 
+
+# noFade - fade length is too small, just take middle part and lower its volume, no fade in fade out
 noFade=$(echo "$fadeLength <= 0" | bc -l)
 
 if [ $noFade -eq 1 ]
