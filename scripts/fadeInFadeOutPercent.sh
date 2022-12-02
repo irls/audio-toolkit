@@ -23,24 +23,40 @@ ext="${1##*.}"
 fadePart=$(expr 100 - $percent | bc)
 echo "fadePart $fadePart"
 echo "$fadeLength * $percent / $fadePart"
-delta=$(printf %.1f $(expr $fadeLength*$percent/$fadePart | bc -l))
+delta=$(printf %.2f $(expr $fadeLength*$percent/$fadePart | bc -l))
 
-leftEnd=$(printf %.1f $(expr $startPos+$fadeLength | bc -l))
-rightStart=$(printf %.1f $(expr $endPos-$fadeLength | bc -l))
-rightFadeStart=$(printf %.1f $(expr $endPos-$fadeLength-$delta | bc -l))
-middleStart=$(printf %.1f $(expr $startPos+$fadeLength | bc -l))
-middleEnd=$(printf %.1f $(expr $endPos-$fadeLength | bc -l))
-fadeDuration=$(printf %.1f $(expr $fadeLength+$delta | bc -l))
+leftEnd=$(printf %.2f $(expr $startPos+$fadeLength | bc -l))
+rightStart=$(printf %.2f $(expr $endPos-$fadeLength | bc -l))
+rightFadeStart=$(printf %.2f $(expr $endPos-$fadeLength-$delta | bc -l))
+middleStart=$(printf %.2f $(expr $startPos+$fadeLength | bc -l))
+middleEnd=$(printf %.2f $(expr $endPos-$fadeLength | bc -l))
+fadeDuration=$(printf %.2f $(expr $fadeLength+$delta | bc -l))
 middleVolume=$(printf %.2f $(expr $percent/100 | bc -l))
 middleLength=$(printf %.2f $(expr $middleEnd-$middleStart | bc -l))
-middleLength=$(printf %d $(expr $middleLength*100 | bc -l))
+noMiddle=$(echo "$middleLength <= 0" | bc -l)
 tmpDir="/data/fadeTmp"
 
-checkRightFadeStart=$(printf %d $(expr $rightFadeStart*100 | bc -l))
+checkRightFadeStart=$(echo "$rightFadeStart < 0" | bc -l)
 
-if [ $checkRightFadeStart -lt 0 ]
+if [ $checkRightFadeStart -eq 1 ]
 then
 rightFadeStart=0
+fi
+
+checkFadeLength=$(echo "$fadeDuration <= 0" | bc -l)
+
+if [ $checkFadeLength -eq 1 ]
+then
+fadeDuration=0.01
+fi
+
+
+# noFade - fade length is too small, just take middle part and lower its volume, no fade in fade out
+noFade=$(echo "$fadeLength <= 0" | bc -l)
+
+if [ $noFade -eq 1 ]
+then
+fadeDuration=0
 fi
 
 echo "delta $delta"
@@ -52,29 +68,40 @@ echo "middleEnd $middleEnd"
 echo "fadeDuration $fadeDuration"
 echo "middleVolume $middleVolume"
 echo "middleLength $middleLength"
+echo "noMiddle $noMiddle"
+echo "noFade $noFade"
 
-if [ $middleLength -eq 0 ]
+if [ $noMiddle -eq 1 ]
 then
-echo "MIDDLE EQUAL"
+echo "MIDDLE EQUAL 0"
 else
-echo "MIDDLE NOT EQUAL"
+echo "MIDDLE NOT EQUAL 0"
 fi
 
 mkdir "$tmpDir"
 
-# fade out left part
-ffmpeg -hide_banner -y -i "$inputFile" -af "afade=t=out:st=$startPos:d=$fadeDuration" "$tmpDir/left_f.$ext"
+leftSource="$inputFile"
+rightSource="$inputFile"
 
+if [ $noFade -eq 0 ]
+then
+
+leftSource="$tmpDir/left_f.$ext"
+# fade out left part
+ffmpeg -hide_banner -y -i "$inputFile" -af "afade=t=out:st=$startPos:d=$fadeDuration" "$leftSource"
+
+rightSource="$tmpDir/right_f.$ext"
 # fade in right part
-ffmpeg -hide_banner -y -i "$inputFile" -af "afade=t=in:st=$rightFadeStart:d=$fadeDuration" "$tmpDir/right_f.$ext"
+ffmpeg -hide_banner -y -i "$inputFile" -af "afade=t=in:st=$rightFadeStart:d=$fadeDuration" "$rightSource"
+fi
 
 # left part of audio
-ffmpeg -hide_banner -y -i "$tmpDir/left_f.$ext" -af "atrim=start=0:end=$leftEnd" "$tmpDir/left.$ext"
+ffmpeg -hide_banner -y -i "$leftSource" -af "atrim=start=0:end=$leftEnd" "$tmpDir/left.$ext"
 
 # right part of audio
-ffmpeg -hide_banner -y -i "$tmpDir/right_f.$ext" -af "atrim=start=$rightStart" "$tmpDir/right.$ext"
+ffmpeg -hide_banner -y -i "$rightSource" -af "atrim=start=$rightStart" "$tmpDir/right.$ext"
 
-if [ $middleLength -gt 0 ]
+if [ $noMiddle -eq 0 ]
 then
 # middle part of audio
 ffmpeg -hide_banner -y -i "$inputFile" -af "atrim=start=$middleStart:end=$middleEnd" "$tmpDir/middle.$ext"
@@ -83,7 +110,7 @@ ffmpeg -hide_banner -y -i "$inputFile" -af "atrim=start=$middleStart:end=$middle
 ffmpeg -hide_banner -y -i "$tmpDir/middle.$ext" -af "volume=$middleVolume" "$tmpDir/middle_l.$ext"
 fi
 
-if [ $middleLength -eq 0 ]
+if [ $noMiddle -eq 1 ]
 then
 # concat two files
 ffmpeg -hide_banner -y -i "$tmpDir/left.$ext" -i "$tmpDir/right.$ext" -filter_complex '[0:0][1:0]concat=n=2:v=0:a=1[out]' -map '[out]' "$outputFile"
