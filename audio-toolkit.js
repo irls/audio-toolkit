@@ -52,7 +52,7 @@ class AudioToolkit {
   }
   
   // convert file format with convertFormatSingle.sh
-  convertFormatSingle(srcFile, destFile) {
+  convertFormatSingle(srcFile, destFile, command = '-ar 44100') {
     // console.log('convertFormat', srcFiles, toFormat)
     if (!srcFile || !destFile) {
       throw "ConvertFormat warning: srcFile & toFormat are required fields"
@@ -65,7 +65,7 @@ class AudioToolkit {
         src: path.dirname(srcFile),
         target: '/data'
       }
-    ],'convertFormatSingle', path.basename(srcFile), path.basename(destFile))
+    ],'convertFormatSingle', path.basename(srcFile), path.basename(destFile), `"${command}"`)
       .then(() => {
         return destFile;
       })
