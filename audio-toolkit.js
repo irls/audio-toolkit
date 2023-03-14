@@ -968,6 +968,75 @@ ${k}=${metadata[k]}`;
       }
     ], 'fadeInFadeOutPercent', `"/data/${source}"`, `"/data/${target}"`, start, end, length, percent);
   }
+  
+  getStreams(srcFile) {
+    if (!srcFile) {
+      return Promise.reject("AudioToolkit getStreams: no file specified");
+    }
+    const tmpDir = tempy.directory()  + '/'
+    //const inputFile = 'input'+ path.extname(srcFile)
+    fs.ensureDirSync(tmpDir);
+    const outputFile = 'output.json'
+    return processAudio([
+          {
+            src: tmpDir,
+            target: '/data'
+          },
+          {
+            src: path.dirname(srcFile),
+            target: '/audio'
+          }
+        ],'getMetaData', `"${path.basename(srcFile)}"`, outputFile)
+      .then(() => {
+        let data = fs.readFileSync(tmpDir + outputFile);
+        let result = [];
+        data = data.toString().trim();
+        //console.log(data)
+        let streamsRegex = /^\s*stream\s*\#(\d+\:\d+)\:([^:]+)\:(.*)/gmi;
+        let match;
+        while ((match = streamsRegex.exec(data))) {
+          result.push({
+            number: match[1].trim(),
+            type: match[2].trim().toLowerCase(),
+            info: match[3].trim(),
+          });
+        }
+        this._removeDirRecursive(tmpDir);
+        return Promise.resolve(result);
+      })
+      .catch(err => {
+        return Promise.resolve();
+      });
+  }
+  
+  clearVideoStream(srcFile) {
+    if (!srcFile) {
+      return Promise.reject("AudioToolkit clearVideoStream: no file specified");
+    }
+    return this.getStreams(srcFile)
+      .then(streams => {
+        let hasVideo = streams.find(stream => {
+          return stream.type === 'video';
+        });
+        if (hasVideo) {
+          let outputFile = srcFile + '_audio' + path.extname(srcFile);
+          return processAudio([
+                {
+                  src: path.dirname(srcFile),
+                  target: '/data'
+                }
+              ],'clearVideoStream', `"${path.basename(srcFile)}"`, `"${path.basename(outputFile)}"`)
+            .then(() => {
+              fs.moveSync(outputFile, srcFile, {overwrite: true});
+              return Promise.resolve(hasVideo);
+            })
+          }
+          return {};
+      })
+      .catch(err => {
+        return Promise.resolve();
+      });
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
