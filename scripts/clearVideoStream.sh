@@ -7,4 +7,4 @@
 # $2 destFile: The file name of the dest audio, with extension.
 
 
-ffmpeg -hide_banner -i "/data/$1" -map 0 -map -0:v "/data/$2"
+ffmpeg -hide_banner -i "/data/$1" -map 0 -map -0:v -c:a copy "/data/$2"
