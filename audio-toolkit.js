@@ -65,7 +65,7 @@ class AudioToolkit {
         src: path.dirname(srcFile),
         target: '/data'
       }
-    ],'convertFormatSingle', path.basename(srcFile), path.basename(destFile), `"${command}"`)
+    ],'convertFormatSingle', `"${path.basename(srcFile)}"`, `"${path.basename(destFile)}"`, `"${command}"`)
       .then(() => {
         return destFile;
       })
@@ -904,7 +904,7 @@ class AudioToolkit {
     let targetPath = `${sourceDir}/${infoFilename}`;
     return processAudio([
       {
-        src: `"${sourceDir}"`, 
+        src: sourceDir, 
         target: '/data'
       }
     ], 'getAudioMeta', `"${path.basename(file)}"`, `"${infoFilename}"`)
@@ -942,7 +942,7 @@ ${k}=${metadata[k]}`;
     fs.outputFileSync(sourceDir + '/' + infoFilename, data);
     return processAudio([
       {
-        src: `"${sourceDir}"`, 
+        src: sourceDir, 
         target: '/data'
       }
     ], 'setAudioMeta', `"${sourceFilename}"`, `"${infoFilename}"`, `"${targetFilename}"`)
@@ -963,7 +963,7 @@ ${k}=${metadata[k]}`;
     
     return processAudio([
       {
-        src: `"${sourceDir}"`,
+        src: sourceDir,
         target: '/data'
       }
     ], 'fadeInFadeOutPercent', `"/data/${source}"`, `"/data/${target}"`, start, end, length, percent);
@@ -1130,10 +1130,10 @@ function processAudio(sharedDir, scriptName, ...args){
     let cmd = `docker run --rm `;
     if (Array.isArray(sharedDir)) {
       sharedDir.forEach(sd => {
-        cmd+=`-v ${sd.src}:${sd.target} `;
+        cmd+=`-v "${sd.src}":${sd.target} `;
       });
     } else {
-      cmd+=`-v ${sharedDir}:/data `;
+      cmd+=`-v "${sharedDir}":/data `;
     }
     cmd+= `dockerffmpeg ${scriptName}.sh ${args.join(' ')}`
     // console.log('Exec: '+ cmd)
