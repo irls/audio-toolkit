@@ -330,7 +330,10 @@ class AudioToolkit {
           duration_ms: null,
           stereo: false, 
           mono: false, 
-          streamInfo: ''
+          streamInfo: '',
+          sample_fmt: null,
+          sample_rate: null,
+          channels: null,
         };
         data = data.toString().trim()
         //console.log(data)
@@ -343,7 +346,7 @@ class AudioToolkit {
         }
         if ((match = /.*?bitrate:\s(.*?)\skb\/s.*/igm.exec(data))) {
           if (match[1]) {
-            result.bitrate = match[1];
+            result.bitrate = parseInt(match[1]);
           }
         }
         if ((match = /Stream #0:0.*?Audio:(.*)$/img.exec(data))) {
@@ -352,6 +355,23 @@ class AudioToolkit {
             result.stereo = true;
           } else {
             result.mono = true;
+          }
+        }
+        if (result.streamInfo) {
+          if ((match = /\ss(\d+)/i.exec(result.streamInfo))) {
+            if (match[1]) {
+              result.sample_fmt = parseInt(match[1]);
+            }
+          }
+          if ((match = /\s(\d+)\s+\w*?hz/img.exec(result.streamInfo))) {
+            if (match[1]) {
+              result.sample_rate = parseInt(match[1]);
+            }
+          }
+          if ((match = /\s(\d+)\s+channel/img.exec(result.streamInfo))) {
+            if (match[1]) {
+              result.channels = parseInt(match[1]);
+            }
           }
         }
         aud._removeDirRecursive(tmpDir);
