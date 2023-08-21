@@ -1057,6 +1057,29 @@ ${k}=${metadata[k]}`;
         return Promise.resolve();
       });
   }
+  
+  // Change audio tempo, values from 0.5 to 2
+  setTempo(srcFile, tempo, destFile) {
+    if (tempo < 0.5 || tempo > 2) {
+      return Promise.reject(new Error(`${tempo} is not correct, set [0.5-2]`));
+    }
+    if (!srcFile || !destFile) {
+      return Promise.reject(new Error("setTempo warning: srcFile & toFormat are required fields"));
+    }
+    return processAudio([
+      {
+        src: path.dirname(srcFile),
+        target: '/data'
+      }
+    ],'setTempo', `"${path.basename(srcFile)}"`, `"${tempo}"`, `"${path.basename(destFile)}"`)
+      .then(() => {
+        return destFile;
+      })
+      .catch(err => {
+        console.log(`setTempo err`, err.message, err.stack);
+        return Promise.reject(err);
+      });
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
