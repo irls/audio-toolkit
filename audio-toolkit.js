@@ -34,21 +34,18 @@ class AudioToolkit {
      throw "ConvertFormat warning: srcFile & toFormat are required fields"
     if (!toFormat) toFormat = 'flac' // default format
     const tmpDir = tempy.directory() + '/'
-    let fileCopyTasks = srcFiles.map((src, i) => {
-      fs.copy(src, tmpDir + i + path.extname(src))
-    } )
-    let processTask = () => processAudio(tmpDir,'convertFormat', toFormat)
-    let collectTask = () => globby(`${tmpDir}*.${toFormat}`).then(paths => {
-     //console.log(`Step 4: globby results in: ${tmpDir}*.${toFormat}`, paths)
-     return paths
-    })
+
+    const fileCopyTasks = srcFiles.map((src, i) => {
+      return fs.copy(src, tmpDir + i + path.extname(src))
+    } );
+
     return Promise.all( fileCopyTasks )
-      .then( processTask )
-      .then( collectTask )
+      .then( processAudio(tmpDir,'convertFormat', toFormat) )
+      .then( globby(`${tmpDir}*.${toFormat}`) )
       .then( (paths) => {
         //console.log('Step 5: complete', paths.length)
         return paths
-      })
+      });
   }
   
   // convert file format with convertFormatSingle.sh
