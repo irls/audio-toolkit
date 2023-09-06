@@ -40,8 +40,8 @@ class AudioToolkit {
     } );
 
     return Promise.all( fileCopyTasks )
-      .then( processAudio(tmpDir,'convertFormat', toFormat) )
-      .then( globby(`${tmpDir}*.${toFormat}`) )
+      .then( () => processAudio(tmpDir,'convertFormat', toFormat) )
+      .then( () => globby(`${tmpDir}*.${toFormat}`) )
       .then( (paths) => {
         //console.log('Step 5: complete', paths.length)
         return paths
