@@ -1057,18 +1057,31 @@ ${k}=${metadata[k]}`;
   
   // Change audio tempo, values from 0.5 to 2
   setTempo(srcFile, tempo, destFile) {
-    if (tempo < 0.5 || tempo > 2) {
-      return Promise.reject(new Error(`${tempo} is not correct, set [0.5-2]`));
-    }
+    //if (tempo < 0.5 || tempo > 2) {
+      //return Promise.reject(new Error(`${tempo} is not correct, set [0.5-2]`));
+    //}
     if (!srcFile || !destFile) {
       return Promise.reject(new Error("setTempo warning: srcFile & toFormat are required fields"));
+    }
+    let customCommand = '';
+    if (tempo > 100) {
+      let partTempo = 1 * (tempo / 2).toFixed(1);
+      if (partTempo <= 100) {
+        customCommand = `atempo=2,atempo=${partTempo}`;
+      }
+    }
+    if (tempo < 0.5) {
+      let partTempo = 1 * (tempo / 0.5).toFixed(2);
+      if (partTempo > 0.5) {
+        customCommand = `atempo=0.5,atempo=${partTempo}`;
+      }
     }
     return processAudio([
       {
         src: path.dirname(srcFile),
         target: '/data'
       }
-    ],'setTempo', `"${path.basename(srcFile)}"`, `"${tempo}"`, `"${path.basename(destFile)}"`)
+    ],'setTempo', `"${path.basename(srcFile)}"`, `"${tempo}"`, `"${path.basename(destFile)}"`, customCommand ? `"${customCommand}"` : '')
       .then(() => {
         return destFile;
       })
