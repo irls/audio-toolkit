@@ -1077,6 +1077,41 @@ ${k}=${metadata[k]}`;
         return Promise.reject(err);
       });
   }
+  
+  insertAndFade(inputFile, insertFile, position, leftFade, rightFade, append = false, outputFile = '') {
+    if (!outputFile) {
+      outputFile = `${inputFile}_out${path.extname(inputFile)}`;
+    }
+    return processAudio([
+      {
+        src: path.dirname(inputFile),
+        target: '/data'
+      },
+      {
+        src: path.dirname(insertFile),
+        target: '/audio'
+      }
+    ],'insertAndFade', `"${path.basename(inputFile)}"`, `"/audio/${path.basename(insertFile)}"`, `"${path.basename(outputFile)}"`, position, leftFade, rightFade, append)
+      .then(() => {
+        return Promise.resolve(outputFile);
+      })
+  }
+  
+  loopFile(inputFile, loop, outputFile) {
+    return processAudio([
+      {
+        src: path.dirname(inputFile),
+        target: '/audio'
+      },
+      {
+        src: path.dirname(outputFile),
+        target: '/data'
+      }
+    ],'loopFile', `"/audio/${path.basename(inputFile)}"`, loop, `"${path.basename(outputFile)}"`)
+      .then(() => {
+        return Promise.resolve(outputFile);
+      })
+  }
 
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
