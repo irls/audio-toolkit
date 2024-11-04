@@ -152,19 +152,22 @@ class AudioToolkit {
   // implemented as split + split + merge
   deleteSection(srcFile, fromPos, toPos, destFile, getInfo = false) {
     if (!srcFile||typeof fromPos === 'undefined' ||!toPos)
-     throw "DeleteSection warning: srcFile, fromPos and toPos are required fields"
-    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]})
-    const tmpDir = tempy.directory() + '/'
-    const inputFile = 'input'+ path.extname(srcFile)
-    const outputFile = 'output'+ path.extname(srcFile)
-    const processAudioTask = processAudio(tmpDir, 'deleteSection',
-      inputFile, outputFile, parseFloat(fromPos / 1000).toFixed(3), parseFloat(toPos / 1000).toFixed(3), getInfo )
-    const copyFileTask = () => fs.copy(srcFile, tmpDir + inputFile)
+     throw "DeleteSection warning: srcFile, fromPos and toPos are required fields";
+    if (!destFile) destFile = tempy.file({extension: path.extname(srcFile).split('.')[1]});
+    const tmpDir = tempy.directory() + '/';
+    const inputFile = 'input'+ path.extname(srcFile);
+    const outputFile = 'output'+ path.extname(srcFile) ;
+    fs.copyFileSync(srcFile, tmpDir + inputFile);
 
-    return copyFileTask()
-      .then( () => processAudioTask )
-      .then( () =>  fs.copy(tmpDir + outputFile, destFile) )
-      .then( () => {
+    let from = parseFloat(fromPos / 1000).toFixed(3);
+    let to = parseFloat(toPos / 1000).toFixed(3);
+
+    return processAudio(tmpDir, 'deleteSection', inputFile, outputFile, from, to, getInfo)
+      .then(() =>  {
+        fs.copySync(tmpDir + outputFile, destFile);
+        return {};
+      })
+      .then(() => {
         let result = {
           destFile: destFile,
           inputInfo: {},
@@ -182,12 +185,21 @@ class AudioToolkit {
           result.inputInfo.bitrate = dataInput.replace(/.*?bitrate:\s(.*?)\skb\/s.*/ig, '$1');
           result.inputInfo.duration_ms = this.time2ms(result.inputInfo.duration);
           this._removeDirRecursive(tmpDir);
-          return Promise.resolve(result);
+          if (logger) {
+            let dt = new Date();
+            let dateLog = `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, '0')}-${dt.getDate().toString().padStart(2, '0')} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`;
+            fs.appendFileSync(logger, `[${dateLog}] deleteSection 
+
+from ${fromPos} (${from})
+to ${toPos} (${to})
+${JSON.stringify(result)}`);
+          }
+          return result;
         } else {
           this._removeDirRecursive(tmpDir);
-          return Promise.resolve(destFile);
+          return destFile;
         }
-      } )
+      });
 
     // var partA, partB
     // return aud.splitFile(srcFile, toPos).then((files) => {
