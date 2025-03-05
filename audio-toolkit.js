@@ -1138,6 +1138,36 @@ ${k}=${metadata[k]}`;
       })
   }
 
+  getAstats(inputFile, statistic = 'RMS_level') {
+    let logFilename = "astats_log";
+    let sourceDir = path.dirname(inputFile);
+    return processAudio([{
+      src: sourceDir,
+      target: "/data"
+    }], "astats", `"${path.basename(inputFile)}"`, `"${statistic}"`, logFilename)
+      .then(() => {
+        let data = fs.readFileSync(sourceDir + "/" + logFilename).toString();
+        let responseRegex = new RegExp(`frame\\:([\\s\\S]*?)${statistic}=(.*?)$`, 'img');
+        let frameTimeRegex = /pts_time\:\s*([\d\.]+)/;
+        let match;
+        let response = [];
+        while ((match = responseRegex.exec(data))) {
+          if (match && match[2]) {
+            let level = parseFloat(match[2]);
+            let frameTime = frameTimeRegex.exec(match[1]);
+            if (frameTime && frameTime[1]) {
+              response.push({
+                time: parseFloat(frameTime[1]),
+                level: level
+              });
+            }
+          }
+        }
+        fs.unlinkSync(sourceDir + "/" + logFilename);
+        return response;
+      });
+  }
+
   checkDir(directory) {
     if (directoryExists.sync(directory)) console.log(` Directory "${directory}" found`)
      else console.log(` Directory "${directory}" not found`)
