@@ -9,6 +9,7 @@ const path   = require('path')
 const fileExists = require('file-exists')
 const directoryExists = require('directory-exists')
 const chokidar = require('chokidar')
+const md5File = require('md5-file');
 
 
 let logger = false;
@@ -1105,7 +1106,10 @@ ${k}=${metadata[k]}`;
   
   insertAndFade(inputFile, insertFile, position, leftFade, rightFade, append = false, outputFile = '') {
     if (!outputFile) {
-      outputFile = `${inputFile}_out${path.extname(inputFile)}`;
+      outputFile = `${path.dirname(inputFile)}/${md5File.sync(inputFile)}_out${path.extname(inputFile)}`;
+    }
+    if (leftFade > position) {
+      leftFade = position;
     }
     return processAudio([
       {
