@@ -344,6 +344,7 @@ ${JSON.stringify(result)}`);
           sample_fmt: null,
           sample_rate: null,
           channels: null,
+          format: null
         };
         data = data.toString().trim()
         //console.log(data)
@@ -382,6 +383,11 @@ ${JSON.stringify(result)}`);
             if (match[1]) {
               result.channels = parseInt(match[1]);
             }
+          }
+        }
+        if ((match = /Input \#\d+\, ([^\s\,]+),/.exec(data))) {
+          if (match && match[1]) {
+            result.format = match[1];
           }
         }
         aud._removeDirRecursive(tmpDir);
